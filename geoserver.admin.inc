@@ -6,6 +6,8 @@
 function geoserver_content_type_settings($form, $form_state, $entity) {
 
   $sql = geoserver_generate_sql($entity->type);
+  $settings = variable_get('geoserver_content_type_settings', array());
+  $settings = isset($settings[$entity->type]) ? $settings[$entity->type] : array();
 
   $form['sql'] = array(
     '#type' => 'textarea',
@@ -14,16 +16,57 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#rows' => 10,
     '#description' => t('Generated SQL.'),
   );
-
-  $form['geoserver_layer'] = array(
+  $form['content_type'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $entity->type,
+  );
+  $form['layer'] = array(
     '#type' => 'textfield',
     '#title' => t('GeoServer layer'),
-    '#default_value' =>  $entity->type,
+    '#default_value' => isset($settings['layer']) ? $settings['layer'] : 
+        variable_get('geoserver_workspace', '').':'.$entity->type,
     '#rows' => 10,
     '#description' => t('Name of corresponding GeoServer layer.'),
   );
+  $form['wfs'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Provide an OpenLayers WFS layer.'),
+    '#default_value' => isset($settings['wfs']) ? $settings['wfs'] : 0,
+  );
+  $form['gwc'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Provide a cached OpenLayers WMS layer.'),
+    '#default_value' => isset($settings['gwc']) ? $settings['gwc'] : 0,
+  );
+  $form['wms'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Provide an untiled OpenLayers WMS layer.'),
+    '#default_value' => isset($settings['wms']) ? $settings['wms'] : 0,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#weight' => 10,
+  );
 
   return $form;
+}
+
+function geoserver_content_type_settings_submit($form, &$form_state) {
+  
+  $setting_keys = array('layer', 'gwc', 'wfs', 'wms');
+  $content_type = $form['content_type']['#value'];
+  
+  $settings = variable_get('geoserver_content_type_settings', array());
+  $settings[$content_type] = array();
+  
+  foreach($form as $key => $field) {
+    if (in_array($key, $setting_keys)) {
+      $settings[$content_type][$key] = $field['#value'];
+    }
+  }
+  
+  variable_set('geoserver_content_type_settings', $settings);
 }
 
 function geoserver_generate_sql($type) {
