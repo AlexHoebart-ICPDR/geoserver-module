@@ -1,16 +1,29 @@
 <?php
 
+require_once('geoserver.openlayers.inc');
+
+/**
+ * Implements hook_ctools_plugin_api().
+ *
+ * Required for OpenLayers integration.
+ */
+function geoserver_ctools_plugin_api($module, $api) {
+  return array('version' => 1);
+}
+
 /**
  * Implements hook_user_login().
  */
 function geoserver_user_login(&$edit, $account) {
+  
+  // TODO: use proper cookie file
 
   $url    = variable_get('geoserver_url', '');
   $fields = 'username='.urlencode($edit['values']['name']).'&password='.urlencode($edit['values']['pass']).'&_spring_security_remember_me=on';
   $file   = '/tmp/cookies';
   file_put_contents($file, '');
 
-  $request = curl_init( $url.'/j_spring_security_check');
+  $request = curl_init( trim($url, '/').'/j_spring_security_check');
   curl_setopt($request, CURLOPT_POST, 3);
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
@@ -29,7 +42,8 @@ function geoserver_user_login(&$edit, $account) {
       $cookies[$columns[5]] = substr($columns[6], 0, -1); 
   }
   
-  if ($cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'] != '""') {
+  if (isset($cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE']) && 
+      $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'] != '""') {
     setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, '/');
     setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'], 0, '/');
   } else {
@@ -42,60 +56,30 @@ function geoserver_user_login(&$edit, $account) {
  * Implements hook_user_login().
  */
 function geoserver_user_logout($account) {
+  // TODO: logout at geoserver
   setcookie('JSESSIONID', '', 1, '/');
   setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, '/');
 }
 
+/**
+ * Implements hook_node_insert().
+ */
 function geoserver_node_insert($node) {
   geoserver_truncate($node);
 }
 
+/**
+ * Implements hook_node_update().
+ */
 function geoserver_node_update($node) {
   geoserver_truncate($node);
 }
 
+/**
+ * Implements hook_node_delete().
+ */
 function geoserver_node_delete($node) {
   geoserver_truncate($node);
-}
-
-/**
- * Implements hook_postgis_field_settings_form().
- */
-function geoserver_postgis_field_settings_form($field, $instance, $has_data) {
-
-  $formats = array(
-      'image/png' => 'PNG',
-      'image/gif' => 'GIF',
-      'image/jpg' => 'JPEG',
-  );
-
-  $geoserver_layers = isset($field['settings']['geoserver_layers']) ?
-    $field['settings']['geoserver_layers'] : '';
-  $geoserver_format = isset($field['settings']['geoserver_format']) ?
-    $field['settings']['geoserver_format'] : '';
-  $display_srid = isset($field['settings']['display_srid']) ?
-    $field['settings']['display_srid'] : POSTGIS_DEFAULT_SRID;
-
-  $form['display_srid'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Display SRID'),
-    '#default_value' => $display_srid,
-  );
-
-  $form['geoserver_layers'] = array(
-    '#type' => 'textfield',
-    '#title' => t('GeoServer Layers'),
-    '#default_value' => $geoserver_layers,
-  );
-
-  $form['geoserver_format'] = array(
-    '#type' => 'select',
-    '#title' => t('GeoServer Image Format'),
-    '#options' => $formats,
-    '#default_value' => $geoserver_format,
-  );
-
-  return $form;
 }
 
 /**
@@ -247,6 +231,30 @@ function geoserver_get($url) {
   return ;
 }
 
+function geoserver_admin() {
+  $url = variable_get('geoserver_url', '');
+  return array('#markup' => '<iframe src="'.$url.'" width="100%" height="2000px" onload="jQuery(\'iframe\').contents().find(\'#header\').hide()"></iframe>');
+  
+//  return array(
+//    '#theme' => 'geoserver-admin',
+////    '#account' => $account,
+//    '#view_mode' => 'full',
+//    '#language' => $GLOBALS['language_content']->language,
+//  );
+}
+
+//function geoserver_theme() {
+//  return array(
+//    'geoserver_admin'  => array(
+////      'render element' => 'form',
+//      'render element' => 'elements',
+//      // In this one the rendering will be done by a tpl.php file instead of
+//      // being rendered by a function, so we specify a template.
+//      'template' => 'geoserver-admin',
+//    ),
+//  );
+//}
+
 /**
  * Implements hook_menu().
  */
@@ -258,6 +266,13 @@ function geoserver_menu() {
     'description' => t('GeoServer settings.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('geoserver_settings_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  
+  $items['admin/geoserver'] = array(
+    'title' => 'GeoServer',
+    'description' => t('GeoServer administration.'),
+    'page callback' => 'geoserver_admin',
     'access arguments' => array('administer site configuration'),
   );
 
@@ -286,6 +301,12 @@ function geoserver_settings_form() {
       '#type' => 'textfield',
       '#title' => t('URL'),
       '#default_value' => variable_get('geoserver_url', ''),
+    ),
+    // TODO: fetch workspaces over REST API and provide dropdown field
+    'geoserver_workspace' => array(
+      '#type' => 'textfield',
+      '#title' => t('Workspace'),
+      '#default_value' => variable_get('geoserver_workspace', ''),
     ),
   );
   return system_settings_form($form);
