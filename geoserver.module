@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * Implements hook_user_login().
+ */
+function geoserver_user_login(&$edit, $account) {
+
+  $url    = variable_get('geoserver_url', '');
+  $fields = 'username='.urlencode($edit['values']['name']).'&password='.urlencode($edit['values']['pass']).'&_spring_security_remember_me=on';
+  $file   = '/tmp/cookies';
+  file_put_contents($file, '');
+
+  $request = curl_init( $url.'/j_spring_security_check');
+  curl_setopt($request, CURLOPT_POST, 3);
+  curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
+  curl_setopt($request, CURLOPT_COOKIEJAR, $file);
+  curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_exec($request);
+  curl_close($request);
+  
+  // parse cookie file
+  $cookies = array();
+  $lines = file($file); 
+  foreach ($lines as $line){ 
+    if ('#' === $line{0})
+      continue;
+    $columns = explode("\t", $line); 
+    if (isset($columns[5]) && isset($columns[6])) 
+      $cookies[$columns[5]] = substr($columns[6], 0, -1); 
+  }
+  
+  if ($cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'] != '""') {
+    setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, '/');
+    setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'], 0, '/');
+  } else {
+    watchdog('geoserver', t('Could not authenticate %username at %url.'),
+        array('%username' => urlencode($edit['values']['name']), '%url' => $url), WATCHDOG_ERROR);
+  }
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function geoserver_user_logout($account) {
+  setcookie('JSESSIONID', '', 1, '/');
+  setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, '/');
+}
+
+function geoserver_node_insert($node) {
+  geoserver_truncate($node);
+}
+
+function geoserver_node_update($node) {
+  geoserver_truncate($node);
+}
+
+function geoserver_node_delete($node) {
+  geoserver_truncate($node);
+}
+
+/**
+ * Implements hook_postgis_field_settings_form().
+ */
+function geoserver_postgis_field_settings_form($field, $instance, $has_data) {
+
+  $formats = array(
+      'image/png' => 'PNG',
+      'image/gif' => 'GIF',
+      'image/jpg' => 'JPEG',
+  );
+
+  $geoserver_layers = isset($field['settings']['geoserver_layers']) ?
+    $field['settings']['geoserver_layers'] : '';
+  $geoserver_format = isset($field['settings']['geoserver_format']) ?
+    $field['settings']['geoserver_format'] : '';
+  $display_srid = isset($field['settings']['display_srid']) ?
+    $field['settings']['display_srid'] : POSTGIS_DEFAULT_SRID;
+
+  $form['display_srid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Display SRID'),
+    '#default_value' => $display_srid,
+  );
+
+  $form['geoserver_layers'] = array(
+    '#type' => 'textfield',
+    '#title' => t('GeoServer Layers'),
+    '#default_value' => $geoserver_layers,
+  );
+
+  $form['geoserver_format'] = array(
+    '#type' => 'select',
+    '#title' => t('GeoServer Image Format'),
+    '#options' => $formats,
+    '#default_value' => $geoserver_format,
+  );
+
+  return $form;
+}
+
+/**
+ * ...
+ */
+function geoserver_truncate($node) {
+
+  $fields = field_info_instances('node', $node->type);
+
+  foreach($fields as $field_name => $field) {
+    if ($field['widget']['module'] === 'postgis') {
+
+      $field = field_info_field($field_name);
+
+      $geo_set = new postgis_geometry_set($field['settings']['type'], $field['settings']['srid']);
+      $geo_set->fromGeometry($node->{$field_name}[$node->language]);
+
+      if (isset($node->original)) {
+        foreach ($node->original->{$field_name}[$node->language] as $geometry) {
+          $geo = new postgis_geometry($field['settings']['type'], $field['settings']['srid']);
+          $geo->fromGeometry($geometry);
+          $geo_set->add($geo);
+        }
+      }
+
+      $bbox = preg_split('/[\, ]/', substr($geo_set->getBox(0.1, $field['settings']['display_srid']), 4, -1));
+
+      if (count($bbox) == 4) {
+
+        $username = variable_get('geoserver_username', '');
+        $password = variable_get('geoserver_password', '');
+        $url      = variable_get('geoserver_url', '');
+        $layers   = explode(',', $field['settings']['geoserver_layers']);
+
+        foreach ($layers as $layer) {
+
+          $message  ='<?xml version="1.0" encoding="UTF-8"?>
+                      <seedRequest>
+                        <name>' . trim($layer) . '</name>
+                        <bounds>
+                          <coords>
+                            <double>' . $bbox[0] . '</double>
+                            <double>' . $bbox[1] . '</double>
+                            <double>' . $bbox[2] . '</double>
+                            <double>' . $bbox[3] . '</double>
+                          </coords>
+                        </bounds>
+                        <gridSetId>EPSG:' . $field['settings']['display_srid'] . '</gridSetId>
+                        <zoomStart>0</zoomStart>
+                        <zoomStop>20</zoomStop>
+                        <format>' . $field['settings']['geoserver_format'] . '</format>
+                        <type>truncate</type>
+                        <threadCount>1</threadCount>
+                      </seedRequest>';
+
+          $headers = array(
+            'Content-Length: ' . strlen($message),
+            'Content-type: text/xml',
+            );
+
+          $request = curl_init( $url . '/gwc/rest/seed/' . trim($layer) . '.xml' );
+
+          curl_setopt($request, CURLOPT_POST, TRUE);
+          curl_setopt($request, CURLOPT_POSTFIELDS, $message);
+          curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
+          curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+          curl_setopt($request, CURLOPT_USERPWD, $username.':'.$password);
+
+          $data = curl_exec($request);
+
+          $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+
+          if ($code === 200) {
+
+            watchdog('geoserver', t('Truncated layer %layer. %message'),
+                array('%layer' => trim($layer), '%message' => $message));
+
+          } else {
+
+            $message = substr($data, 0, curl_getinfo($request, CURLINFO_HEADER_SIZE)-1);
+
+            watchdog('geoserver', t('Could not truncate layer %layer: %message'),
+                array('%layer' => trim($layer), '%message' => $message), WATCHDOG_ERROR);
+          }
+        }
+      }
+    }
+  }
+}
+
+function geoserver_post($url, $content) {
+
+  $username = variable_get('geoserver_username', '');
+  $password = variable_get('geoserver_password', '');
+  $url = variable_get('geoserver_url', '') . $url;
+
+  $headers = array(
+    'Content-Length: ' . strlen($content),
+    'Content-type: text/xml',
+  );
+
+  $request = curl_init($url);
+
+  curl_setopt($request, CURLOPT_POST, TRUE);
+  curl_setopt($request, CURLOPT_POSTFIELDS, $content);
+  curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
+  curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($request, CURLOPT_USERPWD, $username.':'.$password);
+
+  $data = curl_exec($request);
+  $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+//  $data = substr($data, 0, curl_getinfo($request, CURLINFO_HEADER_SIZE)-1);
+
+  if ($code === 200) {
+    watchdog('geoserver', t('Requested %url.'), array('%url' => $url));
+  } else {
+    watchdog('geoserver', t('Requested %url with error %code: %message'),
+      array('%url' => $url, '%code' => $code, '%message' => $data), WATCHDOG_ERROR);
+  }
+
+  $result = new StdClass;
+  $result->code = $code;
+  $result->data = $data;
+
+  return $result;
+}
+
+function geoserver_get($url) {
+
+  $username = variable_get('geoserver_username', '');
+  $password = variable_get('geoserver_password', '');
+  $url = variable_get('geoserver_url', '') . $url;
+
+  $request = curl_init($url);
+
+  curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($request, CURLOPT_USERPWD, $username.':'.$password);
+
+  $data = curl_exec($request);
+  $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+
+  if ($code === 200) {
+    watchdog('geoserver', t('Requested %url.'), array('%url' => $url));
+  } else {
+    watchdog('geoserver', t('Requested %url with error %code: %message'),
+      array('%url' => $url, '%code' => $code, '%message' => $data), WATCHDOG_ERROR);
+  }
+
+  return ;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function geoserver_menu() {
+  $items = array();
+
+  $items['admin/config/system/geoserver'] = array(
+    'title' => 'GeoServer',
+    'description' => t('GeoServer settings.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('geoserver_settings_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['admin/structure/types/manage/%node_type/geoserver'] = array(
+    'title' => t('GeoServer'),
+    'description' => t('Publish content type with GeoServer.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('geoserver_content_type_settings', 4),
+    'access callback' => 'geoserver_content_type_settings_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'geoserver.admin.inc',
+    'weight' => 1,
+  );
+
+  return $items;
+}
+
+/**
+ *  Function to generate the form setting array
+ */
+function geoserver_settings_form() {
+
+  $form = array(
+    'geoserver_url' => array(
+      '#type' => 'textfield',
+      '#title' => t('URL'),
+      '#default_value' => variable_get('geoserver_url', ''),
+    ),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Check if a given entity has geospatial attributes.
+ *
+ * @param stdClass $entity
+ * @return boolean
+ */
+function geoserver_content_type_settings_access($entity) {
+
+  $fields = field_info_instances('node', $entity->type);
+
+  foreach ($fields as $field) {
+    if ($field['widget']['module'] === 'postgis') {
+      return true;
+    }
+  }
+
+  return false;
+}
