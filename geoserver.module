@@ -15,12 +15,11 @@ function geoserver_ctools_plugin_api($module, $api) {
  * Implements hook_user_login().
  */
 function geoserver_user_login(&$edit, $account) {
-  
-  // TODO: use proper cookie file
 
   $url    = variable_get('geoserver_url', '');
   $fields = 'username='.urlencode($edit['values']['name']).'&password='.urlencode($edit['values']['pass']).'&_spring_security_remember_me=on';
-  $file   = '/tmp/cookies';
+  
+  $file   = _geoserver_get_cookiefile();
   file_put_contents($file, '');
 
   $request = curl_init( trim($url, '/').'/j_spring_security_check');
@@ -59,6 +58,7 @@ function geoserver_user_logout($account) {
   // TODO: logout at geoserver
   setcookie('JSESSIONID', '', 1, '/');
   setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, '/');
+  unlink(_geoserver_get_cookiefile());
 }
 
 /**
@@ -172,8 +172,6 @@ function geoserver_truncate($node) {
 
 function geoserver_post($url, $content) {
 
-  $username = variable_get('geoserver_username', '');
-  $password = variable_get('geoserver_password', '');
   $url = variable_get('geoserver_url', '') . $url;
 
   $headers = array(
@@ -187,11 +185,10 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_POSTFIELDS, $content);
   curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_USERPWD, $username.':'.$password);
+  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
 
   $data = curl_exec($request);
   $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-//  $data = substr($data, 0, curl_getinfo($request, CURLINFO_HEADER_SIZE)-1);
 
   if ($code === 200) {
     watchdog('geoserver', t('Requested %url.'), array('%url' => $url));
@@ -310,4 +307,15 @@ function geoserver_content_type_settings_access($entity) {
   }
 
   return false;
+}
+
+/**
+ * Get path of file where GeoServer's session cookies are stored.
+ * 
+ * @global stdClass $user
+ * @return string  
+ */
+function _geoserver_get_cookiefile() {
+  global $user;
+  return file_directory_temp().'/geoserver_session_user_'.$user->uid;
 }
