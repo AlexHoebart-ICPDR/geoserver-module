@@ -90,11 +90,6 @@ function geoserver_content_type_settings_submit($form, &$form_state) {
 }
 
 function geoserver_generate_sql($type) {
-  
-  /**
-   * TODO:
-   * - handle n:m fields
-   */
 
   $connection = Database::getConnection();
   $prefix = $connection->tablePrefix();
@@ -110,12 +105,14 @@ function geoserver_generate_sql($type) {
   foreach($fields as $field_name => $field) {
 
     $field = field_info_field($field_name);
-
-    foreach ($field['storage']['details']['sql']['FIELD_LOAD_CURRENT'] as $table => $table_fields) {
-      foreach ($table_fields as $table_field) {
-        $sql['fields'][] = $table_field;
+    
+    if ($field['cardinality'] === '1') {
+      foreach ($field['storage']['details']['sql']['FIELD_LOAD_CURRENT'] as $table => $table_fields) {
+        foreach ($table_fields as $table_field) {
+          $sql['fields'][] = $table_field;
+        }
+        $sql['tables'][] = "\nLEFT JOIN $prefix$table ON node.nid = $table.entity_id";
       }
-      $sql['tables'][] = "\nLEFT JOIN $prefix$table ON node.nid = $table.entity_id";
     }
   }
 
