@@ -234,26 +234,7 @@ function geoserver_get($url) {
 function geoserver_admin() {
   $url = variable_get('geoserver_url', '');
   return array('#markup' => '<iframe src="'.$url.'" width="100%" height="2000px" onload="jQuery(\'iframe\').contents().find(\'#header\').hide()"></iframe>');
-  
-//  return array(
-//    '#theme' => 'geoserver-admin',
-////    '#account' => $account,
-//    '#view_mode' => 'full',
-//    '#language' => $GLOBALS['language_content']->language,
-//  );
 }
-
-//function geoserver_theme() {
-//  return array(
-//    'geoserver_admin'  => array(
-////      'render element' => 'form',
-//      'render element' => 'elements',
-//      // In this one the rendering will be done by a tpl.php file instead of
-//      // being rendered by a function, so we specify a template.
-//      'template' => 'geoserver-admin',
-//    ),
-//  );
-//}
 
 /**
  * Implements hook_menu().
