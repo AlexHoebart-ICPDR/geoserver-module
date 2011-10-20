@@ -22,16 +22,21 @@ function geoserver_openlayers_layers() {
       $layer->title = $setting['title'];
       $layer->description = t('GeoWebCache layer for content type %name', array('%name' => $setting['title']));
       $layer->data = array(
-        'baselayer' => FALSE,
-        'projection' => array('4326'),
         'layer_type' => 'openlayers_layer_type_wms',
-        'url' => trim($url, '/').'gwc/service/wms',
+        'base_url' => trim($url, '/').'/gwc/service/wms',
         'params' => array(
-          'isBaseLayer' => FALSE,
-          'layers' => $setting['layer'],
+          'isBaseLayer' => 0,
+          'buffer' => '2',
+          'ratio' => '1.5',
+          'singleTile' => 0,
         ),
         'options' => array(
-          'buffer' => 1,
+          'srs' => $setting['gwc_srs'],
+          'TRANSPARENT' => 'true',
+          'exceptions' => 'application/vnd.ogc.se_inimage',
+          'format' => 'image/png',
+          'layers' => $setting['layer'],
+          'styles' => '',
         ),
       );
       $layers[$layer->name] = $layer;

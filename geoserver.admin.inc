@@ -42,6 +42,22 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#title' => t('Provide a cached OpenLayers WMS layer.'),
     '#default_value' => isset($settings['gwc']) ? $settings['gwc'] : 0,
   );
+  $form['gwc_srs'] = array(
+    '#type' => 'select',
+    '#title' => t('Projection'),
+    '#options' => array(
+      'EPSG:4326' => '4326',
+      'EPSG:900913' => '900913',
+     ),
+    '#default_value' => isset($settings['gwc_srs']) ? $settings['gwc_srs'] : 'EPSG:4326',
+    '#states' => array(
+      'visible' => array( 
+        ':input[name="gwc"]' => array(
+          'checked' => TRUE
+        ),
+      ),
+    ),
+  );
   $form['wms'] = array(
     '#type' => 'checkbox',
     '#title' => t('Provide an untiled OpenLayers WMS layer.'),
@@ -58,7 +74,7 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
 
 function geoserver_content_type_settings_submit($form, &$form_state) {
   
-  $setting_keys = array('layer', 'title', 'gwc', 'wfs', 'wms');
+  $setting_keys = array('layer', 'title', 'gwc', 'gwc_srs', 'wfs', 'wms');
   $content_type = $form['content_type']['#value'];
   
   $settings = variable_get('geoserver_content_type_settings', array());
