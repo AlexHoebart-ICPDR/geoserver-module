@@ -5,20 +5,28 @@
  */
 function geoserver_content_type_settings($form, $form_state, $entity) {
 
+  // TODO: check if GS is configured
+
   $sql = geoserver_generate_sql($entity->type);
   $settings = variable_get('geoserver_content_type_settings', array());
   $settings = isset($settings[$entity->type]) ? $settings[$entity->type] : array();
+  $geometry_column = '';
+  
+  $fields = field_info_instances('node', $entity->type);
 
-  $form['sql'] = array(
-    '#type' => 'textarea',
-    '#title' => t('SQL'),
-    '#default_value' =>  $sql,
-    '#rows' => 10,
-    '#description' => t('Generated SQL.'),
-  );
+  foreach ($fields as $key => $field) {
+    if ($field['widget']['module'] === 'postgis') {
+      $geometry_column = $key.'_geometry';
+    }
+  }
+
   $form['content_type'] = array(
     '#type' => 'hidden',
     '#default_value' => $entity->type,
+  );
+  $form['geometry_column'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $geometry_column,
   );
   $form['title'] = array(
     '#type' => 'hidden',
@@ -27,10 +35,40 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
   $form['layer'] = array(
     '#type' => 'textfield',
     '#title' => t('GeoServer layer'),
-    '#default_value' => isset($settings['layer']) ? $settings['layer'] : 
-        variable_get('geoserver_workspace', '').':'.$entity->type,
+    '#default_value' => isset($settings['layer']) ? $settings['layer'] : $entity->type,
     '#rows' => 10,
     '#description' => t('Name of corresponding GeoServer layer.'),
+  );
+  $form['sql_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('SQL'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['sql_fieldset']['sql'] = array(
+    '#type' => 'textarea',
+    '#default_value' =>  $sql,
+    '#rows' => 10,
+    '#description' => t('Generated SQL.'),
+  );
+  $form['sld'] = array(
+    '#type' => 'textfield',
+    '#title' => t('GeoServer style'),
+    '#default_value' => isset($settings['sld']) ? $settings['sld'] : $entity->type,
+    '#rows' => 10,
+    '#description' => t('Name of corresponding GeoServer style.'),
+  );
+  $form['style_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Style'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['style_fieldset']['style'] = array(
+    '#type' => 'textarea',
+    '#default_value' =>  '',
+    '#rows' => 10,
+    '#description' => t('SLD style.'),
   );
   $form['wfs'] = array(
     '#type' => 'checkbox',
@@ -74,7 +112,7 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
 
 function geoserver_content_type_settings_submit($form, &$form_state) {
   
-  $setting_keys = array('layer', 'title', 'gwc', 'gwc_srs', 'wfs', 'wms');
+  $setting_keys = array('layer', 'geometry_column', 'title', 'sld', 'gwc', 'gwc_srs', 'wfs', 'wms');
   $content_type = $form['content_type']['#value'];
   
   $settings = variable_get('geoserver_content_type_settings', array());
