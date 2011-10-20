@@ -197,7 +197,7 @@ function geoserver_post($url, $content) {
       array('%url' => $url, '%code' => $code, '%message' => $data), WATCHDOG_ERROR);
   }
 
-  $result = new StdClass;
+  $result = new stdClass;
   $result->code = $code;
   $result->data = $data;
 
@@ -206,26 +206,25 @@ function geoserver_post($url, $content) {
 
 function geoserver_get($url) {
 
-  $username = variable_get('geoserver_username', '');
-  $password = variable_get('geoserver_password', '');
   $url = variable_get('geoserver_url', '') . $url;
-
+  
   $request = curl_init($url);
 
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_USERPWD, $username.':'.$password);
+  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
 
-  $data = curl_exec($request);
-  $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  $result = new stdClass();
+  $result->data = curl_exec($request);
+  $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
 
-  if ($code === 200) {
+  if ($result->code === 200) {
     watchdog('geoserver', t('Requested %url.'), array('%url' => $url));
   } else {
     watchdog('geoserver', t('Requested %url with error %code: %message'),
-      array('%url' => $url, '%code' => $code, '%message' => $data), WATCHDOG_ERROR);
+      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
   }
 
-  return ;
+  return $result;
 }
 
 function geoserver_admin() {
