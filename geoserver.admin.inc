@@ -20,6 +20,10 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#type' => 'hidden',
     '#default_value' => $entity->type,
   );
+  $form['title'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $entity->name,
+  );
   $form['layer'] = array(
     '#type' => 'textfield',
     '#title' => t('GeoServer layer'),
@@ -54,7 +58,7 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
 
 function geoserver_content_type_settings_submit($form, &$form_state) {
   
-  $setting_keys = array('layer', 'gwc', 'wfs', 'wms');
+  $setting_keys = array('layer', 'title', 'gwc', 'wfs', 'wms');
   $content_type = $form['content_type']['#value'];
   
   $settings = variable_get('geoserver_content_type_settings', array());

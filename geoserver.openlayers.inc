@@ -18,9 +18,9 @@ function geoserver_openlayers_layers() {
     if ($setting['gwc']) {
       $layer = new stdClass();
       $layer->api_version = 1;
-      $layer->name = $content_type;
-      $layer->title = $content_type;
-      $layer->description = '...';
+      $layer->name = $content_type.'_gwc';
+      $layer->title = $setting['title'];
+      $layer->description = t('GeoWebCache layer for content type %name', array('%name' => $setting['title']));
       $layer->data = array(
         'baselayer' => FALSE,
         'projection' => array('4326'),
