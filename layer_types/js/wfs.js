@@ -1,0 +1,36 @@
+
+/**
+ * @file
+ * Layer handler for GeoServer WFS layers
+ */
+
+/**
+ * Openlayer layer handler for GeoServer WFS layer
+ */
+Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
+
+  var layer = new OpenLayers.Layer.Vector(title, {
+    strategies: [new OpenLayers.Strategy.BBOX()],
+    projection: 'EPSG:'+map.projection,
+    buffer: 0,
+    styleMap: new OpenLayers.StyleMap(),
+    protocol: new OpenLayers.Protocol.WFS({
+      version: "1.1.0",
+      url: options.protocol.url,
+      featureType: options.protocol.typeName,
+      geometryName: options.protocol.geometryName,
+      featureNS: options.protocol.featureNS,
+      srsName: 'EPSG:'+map.projection
+    })
+  });
+  
+  OpenLayers.Request.GET({
+      url: options.sld,
+      success: function(request) {
+        var sld = new OpenLayers.Format.SLD().read(request.responseXML || request.responseText);
+        layer.styleMap.styles['default'] = sld.namedLayers[options.protocol.typeName].userStyles[0];
+      }
+  });
+  
+  return layer;
+};
