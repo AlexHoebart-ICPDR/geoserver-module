@@ -279,11 +279,16 @@ function geoserver_settings_form() {
       '#title' => t('URL'),
       '#default_value' => variable_get('geoserver_url', ''),
     ),
-    // TODO: fetch workspaces over REST API and provide dropdown field
+    // TODO: fetch workspaces and namespaces over REST API and provide dropdown fields
     'geoserver_workspace' => array(
       '#type' => 'textfield',
       '#title' => t('Workspace'),
       '#default_value' => variable_get('geoserver_workspace', ''),
+    ),
+    'geoserver_namespace' => array(
+      '#type' => 'textfield',
+      '#title' => t('Namespace URI'),
+      '#default_value' => variable_get('geoserver_namespace', ''),
     ),
   );
   return system_settings_form($form);
