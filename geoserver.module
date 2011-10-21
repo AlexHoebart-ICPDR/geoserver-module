@@ -83,89 +83,58 @@ function geoserver_node_delete($node) {
 }
 
 /**
- * ...
+ * Truncate GeoWebCache after changes to specific node. 
+ * Requires a cached WMS layer for the content type of the node.
  */
 function geoserver_truncate($node) {
+  
+  $content_type_settings = variable_get('geoserver_content_type_settings', array());
 
-  $fields = field_info_instances('node', $node->type);
+  if (isset($content_type_settings[$node->type]) && $content_type_settings[$node->type]['gwc']) {
+    // node belongs to a content type with a GeoWebCache layer
+    
+    $workspace = variable_get('geoserver_workspace', '');
+    $settings = $content_type_settings[$node->type];
+    $field_name = substr($settings['geometry_column'], 0, -9);
+    $field = field_info_field($field_name);
 
-  foreach($fields as $field_name => $field) {
-    if ($field['widget']['module'] === 'postgis') {
+    $geo_set = new postgis_geometry_set($field['settings']['type'], $field['settings']['srid']);
+    $geo_set->fromGeometry($node->{$field_name}[$node->language]);
 
-      $field = field_info_field($field_name);
-
-      $geo_set = new postgis_geometry_set($field['settings']['type'], $field['settings']['srid']);
-      $geo_set->fromGeometry($node->{$field_name}[$node->language]);
-
-      if (isset($node->original)) {
-        foreach ($node->original->{$field_name}[$node->language] as $geometry) {
-          $geo = new postgis_geometry($field['settings']['type'], $field['settings']['srid']);
-          $geo->fromGeometry($geometry);
-          $geo_set->add($geo);
-        }
+    if (isset($node->original)) {
+      foreach ($node->original->{$field_name}[$node->language] as $geometry) {
+        $geo = new postgis_geometry($field['settings']['type'], $field['settings']['srid']);
+        $geo->fromGeometry($geometry);
+        $geo_set->add($geo);
       }
+    }
 
-      $bbox = preg_split('/[\, ]/', substr($geo_set->getBox(0.1, $field['settings']['display_srid']), 4, -1));
+    $layer = $workspace . ':' . trim($settings['layer']);
+    $srid = explode(':', $settings['gwc_srs']);
+    $bbox = preg_split('/[\, ]/', substr($geo_set->getBox(0.1, $srid[1]), 4, -1));
 
-      if (count($bbox) == 4) {
+    if (count($bbox) == 4) {
 
-        $username = variable_get('geoserver_username', '');
-        $password = variable_get('geoserver_password', '');
-        $url      = variable_get('geoserver_url', '');
-        $layers   = explode(',', $field['settings']['geoserver_layers']);
+      $message  ='<?xml version="1.0" encoding="UTF-8"?>
+                  <seedRequest>
+                    <name>' . $layer . '</name>
+                    <bounds>
+                      <coords>
+                        <double>' . $bbox[0] . '</double>
+                        <double>' . $bbox[1] . '</double>
+                        <double>' . $bbox[2] . '</double>
+                        <double>' . $bbox[3] . '</double>
+                      </coords>
+                    </bounds>
+                    <gridSetId>' . $settings['gwc_srs'] . '</gridSetId>
+                    <zoomStart>0</zoomStart>
+                    <zoomStop>20</zoomStop>
+                    <format>image/png</format>
+                    <type>truncate</type>
+                    <threadCount>1</threadCount>
+                  </seedRequest>';
 
-        foreach ($layers as $layer) {
-
-          $message  ='<?xml version="1.0" encoding="UTF-8"?>
-                      <seedRequest>
-                        <name>' . trim($layer) . '</name>
-                        <bounds>
-                          <coords>
-                            <double>' . $bbox[0] . '</double>
-                            <double>' . $bbox[1] . '</double>
-                            <double>' . $bbox[2] . '</double>
-                            <double>' . $bbox[3] . '</double>
-                          </coords>
-                        </bounds>
-                        <gridSetId>EPSG:' . $field['settings']['display_srid'] . '</gridSetId>
-                        <zoomStart>0</zoomStart>
-                        <zoomStop>20</zoomStop>
-                        <format>' . $field['settings']['geoserver_format'] . '</format>
-                        <type>truncate</type>
-                        <threadCount>1</threadCount>
-                      </seedRequest>';
-
-          $headers = array(
-            'Content-Length: ' . strlen($message),
-            'Content-type: text/xml',
-            );
-
-          $request = curl_init( $url . '/gwc/rest/seed/' . trim($layer) . '.xml' );
-
-          curl_setopt($request, CURLOPT_POST, TRUE);
-          curl_setopt($request, CURLOPT_POSTFIELDS, $message);
-          curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
-          curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-          curl_setopt($request, CURLOPT_USERPWD, $username.':'.$password);
-
-          $data = curl_exec($request);
-
-          $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-
-          if ($code === 200) {
-
-            watchdog('geoserver', t('Truncated layer %layer. %message'),
-                array('%layer' => trim($layer), '%message' => $message));
-
-          } else {
-
-            $message = substr($data, 0, curl_getinfo($request, CURLINFO_HEADER_SIZE)-1);
-
-            watchdog('geoserver', t('Could not truncate layer %layer: %message'),
-                array('%layer' => trim($layer), '%message' => $message), WATCHDOG_ERROR);
-          }
-        }
-      }
+      geoserver_post('/gwc/rest/seed/'.$layer.'.xml', $message);
     }
   }
 }
