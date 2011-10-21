@@ -172,7 +172,7 @@ function geoserver_truncate($node) {
 
 function geoserver_post($url, $content) {
 
-  $url = variable_get('geoserver_url', '') . $url;
+  $url = trim(variable_get('geoserver_url', ''), '/') . '/' . trim($url, '/');
 
   $headers = array(
     'Content-Length: ' . strlen($content),
@@ -187,26 +187,24 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
 
-  $data = curl_exec($request);
-  $code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  $result = new stdClass;
+  $result->data = curl_exec($request);
+  $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  curl_close($request);
 
-  if ($code === 200) {
+  if ($result->code === 200) {
     watchdog('geoserver', t('Requested %url.'), array('%url' => $url));
   } else {
     watchdog('geoserver', t('Requested %url with error %code: %message'),
-      array('%url' => $url, '%code' => $code, '%message' => $data), WATCHDOG_ERROR);
+      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
   }
-
-  $result = new stdClass;
-  $result->code = $code;
-  $result->data = $data;
 
   return $result;
 }
 
 function geoserver_get($url) {
 
-  $url = variable_get('geoserver_url', '') . $url;
+  $url = trim(variable_get('geoserver_url', ''), '/') . '/' . trim($url, '/');
   
   $request = curl_init($url);
 
@@ -216,6 +214,7 @@ function geoserver_get($url) {
   $result = new stdClass();
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  curl_close($request);
 
   if ($result->code === 200) {
     watchdog('geoserver', t('Requested %url.'), array('%url' => $url));
