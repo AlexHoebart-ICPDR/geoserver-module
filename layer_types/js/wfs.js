@@ -10,6 +10,7 @@
 Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
 
   var layer = new OpenLayers.Layer.Vector(title, {
+    drupalID: options.drupalID,
     strategies: [new OpenLayers.Strategy.BBOX()],
     projection: 'EPSG:'+map.projection,
     buffer: 0,
