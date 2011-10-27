@@ -25,7 +25,8 @@ Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
     })
   });
   
-  OpenLayers.Request.GET({
+  if (typeof options.sld === 'string') {
+    OpenLayers.Request.GET({
       url: options.sld,
       success: function(request) {
         var sld = new OpenLayers.Format.SLD().read(request.responseXML || request.responseText);
@@ -36,7 +37,8 @@ Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
           layer.redraw();
         });
       }
-  });
+    });
+  }
   
   return layer;
 };
