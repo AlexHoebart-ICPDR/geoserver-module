@@ -29,7 +29,12 @@ Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
       url: options.sld,
       success: function(request) {
         var sld = new OpenLayers.Format.SLD().read(request.responseXML || request.responseText);
-        layer.styleMap.styles['default'] = sld.namedLayers[options.protocol.typeName].userStyles[0];
+        jQuery.each(sld.namedLayers[options.protocol.typeName].userStyles, function(index, style) {
+          style.defaultsPerSymbolizer = false;
+          style.defaultStyle.cursor = 'pointer';
+          layer.styleMap.styles[style.description] = style;
+          layer.redraw();
+        });
       }
   });
   
