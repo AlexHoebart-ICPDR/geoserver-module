@@ -41,27 +41,35 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
    */
   function options_form() {
     return array(
-      'url' => array(
-        '#type' => 'textfield',
-        '#title' => t('URL'),
-        '#description' => t('The URL of the WFS server.'),
-        '#maxlength' => 1024,
-        '#default_value' => isset($this->data['url']) ?
-          $this->data['url'] : ''
+      'protocol' => array(
+        'url' => array(
+          '#type' => 'textfield',
+          '#title' => t('URL'),
+          '#description' => t('The URL of the WFS server.'),
+          '#maxlength' => 1024,
+          '#default_value' => isset($this->data['protocol']['url']) ? $this->data['protocol']['url'] : ''
+        ),
+        'typeName' => array(
+          '#type' => 'textfield',
+          '#title' => t('Type Name'),
+          '#description' => t('The typename of the features requested.'),
+          '#maxlength' => 100,
+          '#default_value' => isset($this->data['protocol']['typeName']) ? $this->data['protocol']['typeName'] : ''
+        ),
+        'geometryName' => array(
+          '#type' => 'textfield',
+          '#title' => t('Geometry Name'),
+          '#description' => t('The name of the geometry field in the GML returned from the WFS layer.'),
+          '#maxlength' => 100,
+          '#default_value' => isset($this->data['protocol']['geometryName']) ? $this->data['protocol']['geometryName'] : ''
+        ),
       ),
-      'typeName' => array(
+      'sld' => array(
         '#type' => 'textfield',
-        '#title' => t('Type Name'),
-        '#description' => t('The typename of the features requested.'),
+        '#title' => t('SLD'),
+        '#description' => t('URL to a Styled Layer Descriptor (SLD) file.'),
         '#maxlength' => 100,
-        '#default_value' => isset($this->data['typeName']) ? $this->data['typeName'] : ''
-      ),
-      'geometryName' => array(
-        '#type' => 'textfield',
-        '#title' => t('Geometry Name'),
-        '#description' => t('The name of the geometry field in the GML returned from the WFS layer.'),
-        '#maxlength' => 100,
-        '#default_value' => isset($this->data['geometryName']) ? $this->data['geometryName'] : 'geometry'
+        '#default_value' => isset($this->data['sld']) ? $this->data['sld'] : ''
       ),
       'layer_type' => array(
         '#type' => 'hidden',
