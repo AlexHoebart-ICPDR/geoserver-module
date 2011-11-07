@@ -98,12 +98,12 @@ function geoserver_truncate($node) {
     $field_name = substr($settings['geometry_column'], 0, -9);
     $field = field_info_field($field_name);
 
-    $geo_set = new postgis_geometry_set($field['settings']['type'], $field['settings']['srid']);
+    $geo_set = new PostgisGeometrySet($field['settings']['type'], $field['settings']['srid']);
     $geo_set->fromGeometry($node->{$field_name}[$node->language]);
 
     if (isset($node->original)) {
       foreach ($node->original->{$field_name}[$node->language] as $geometry) {
-        $geo = new postgis_geometry($field['settings']['type'], $field['settings']['srid']);
+        $geo = new PostgisGeometry($field['settings']['type'], $field['settings']['srid']);
         $geo->fromGeometry($geometry);
         $geo_set->add($geo);
       }
