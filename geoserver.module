@@ -16,13 +16,15 @@ function geoserver_ctools_plugin_api($module, $api) {
  */
 function geoserver_user_login(&$edit, $account) {
 
-  $url    = variable_get('geoserver_url', '');
-  $fields = 'username='.urlencode($edit['values']['name']).'&password='.urlencode($edit['values']['pass']).'&_spring_security_remember_me=on';
+  $url    = parse_url(variable_get('geoserver_url', ''));
+  $fields = 'username=' . urlencode($edit['values']['name']) .
+            '&password=' . urlencode($edit['values']['pass']) .
+            '&_spring_security_remember_me=on';
   
   $file   = _geoserver_get_cookiefile();
   file_put_contents($file, '');
 
-  $request = curl_init( trim($url, '/').'/j_spring_security_check');
+  $request = curl_init('http://' . $url['host'] . $url['path'] . 'j_spring_security_check');
   curl_setopt($request, CURLOPT_POST, 3);
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
@@ -40,11 +42,11 @@ function geoserver_user_login(&$edit, $account) {
     if (isset($columns[5]) && isset($columns[6])) 
       $cookies[$columns[5]] = substr($columns[6], 0, -1); 
   }
-  
+
   if (isset($cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE']) && 
       $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'] != '""') {
-    setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, '/');
-    setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'], 0, '/');
+    setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
+    setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'], 0, $url['path'], $url['host']);
   } else {
     watchdog('geoserver', t('Could not authenticate %username at %url.'),
         array('%username' => urlencode($edit['values']['name']), '%url' => $url), WATCHDOG_ERROR);
@@ -55,9 +57,12 @@ function geoserver_user_login(&$edit, $account) {
  * Implements hook_user_login().
  */
 function geoserver_user_logout($account) {
+  
+  $url = parse_url(variable_get('geoserver_url', ''));
+  
   // TODO: logout at geoserver
-  setcookie('JSESSIONID', '', 1, '/');
-  setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, '/');
+  setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
+  setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, $url['path'], $url['host']);
   unlink(_geoserver_get_cookiefile());
 }
 
