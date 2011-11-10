@@ -59,10 +59,10 @@ function geoserver_user_login(&$edit, $account) {
 function geoserver_user_logout($account) {
   
   $url = parse_url(variable_get('geoserver_url', ''));
-  
-  // TODO: logout at geoserver
+
   setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
   setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, $url['path'], $url['host']);
+
   unlink(_geoserver_get_cookiefile());
 }
 
