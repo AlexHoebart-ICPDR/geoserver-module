@@ -181,7 +181,8 @@ function geoserver_post($url, $content) {
 
   if ($result->code === 200) {
     watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  } else {
+  } 
+  else {
     watchdog('geoserver', 'Requested %url with error %code: %message',
       array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
   }
@@ -211,7 +212,8 @@ function geoserver_get($url) {
 
   if ($result->code === 200) {
     watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  } else {
+  } 
+  else {
     watchdog('geoserver', 'Requested %url with error %code: %message',
       array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
   }
@@ -296,9 +298,6 @@ function geoserver_settings_form() {
 
 /**
  * Check if a given entity has geospatial attributes.
- *
- * @param stdClass $entity
- * @return boolean
  */
 function geoserver_content_type_settings_access($entity) {
 
@@ -316,10 +315,10 @@ function geoserver_content_type_settings_access($entity) {
 /**
  * Get path of file where GeoServer's session cookies are stored.
  *
- * @global stdClass $user
  * @return string Path of GeoServer's session cookie.
  */
 function _geoserver_get_cookiefile() {
   global $user;
   return file_directory_temp() . '/geoserver_session_user_' . $user->uid;
 }
+

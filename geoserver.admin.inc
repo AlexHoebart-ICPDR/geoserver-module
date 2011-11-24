@@ -164,7 +164,6 @@ function geoserver_generate_sql($type) {
     }
   }
 
-  return implode(', ', $sql['fields']) . ' ' .
-         implode(' ', $sql['tables']) . ' ' .
-         implode(' ', $sql['where']);
+  return implode(', ', $sql['fields']) . ' ' . implode(' ', $sql['tables']) . ' ' . implode(' ', $sql['where']);
 }
+
