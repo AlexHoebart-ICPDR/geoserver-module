@@ -1,5 +1,4 @@
 name = GeoServer
-description = GeoServer integration
+description = GeoServer integration.
 core = 7.x
 
-files[] = geoserver.module

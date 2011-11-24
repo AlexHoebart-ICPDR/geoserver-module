@@ -61,3 +61,4 @@ Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
   
   return layer;
 };
+

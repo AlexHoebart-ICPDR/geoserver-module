@@ -9,6 +9,10 @@
  * OpenLayers WFS Layer Type class
  */
 class geoserver_layer_type_wfs extends openlayers_layer_type {
+
+  /**
+   * Constructor.
+   */
   function __construct($layer = array(), $map = array()) {
     parent::__construct($layer, $map);
     if (isset($this->data)) {
@@ -48,7 +52,7 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
           '#title' => t('URL'),
           '#description' => t('The URL of the WFS server.'),
           '#maxlength' => 1024,
-          '#default_value' => isset($this->data['protocol']['url']) ? 
+          '#default_value' => isset($this->data['protocol']['url']) ?
               $this->data['protocol']['url'] : ''
         ),
         'typeName' => array(
@@ -56,7 +60,7 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
           '#title' => t('Type Name'),
           '#description' => t('The typename of the features requested.'),
           '#maxlength' => 100,
-          '#default_value' => isset($this->data['protocol']['typeName']) ? 
+          '#default_value' => isset($this->data['protocol']['typeName']) ?
               $this->data['protocol']['typeName'] : ''
         ),
         'geometryName' => array(
@@ -64,7 +68,7 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
           '#title' => t('Geometry Name'),
           '#description' => t('The name of the geometry field in the GML returned from the WFS layer.'),
           '#maxlength' => 100,
-          '#default_value' => isset($this->data['protocol']['geometryName']) ? 
+          '#default_value' => isset($this->data['protocol']['geometryName']) ?
               $this->data['protocol']['geometryName'] : ''
         ),
       ),
@@ -82,7 +86,7 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
    * Render.
    */
   function render(&$map) {
-    drupal_add_js(drupal_get_path('module', 'geoserver').'/layer_types/js/wfs.js');
+    drupal_add_js(drupal_get_path('module', 'geoserver') . '/layer_types/js/wfs.js');
     return $this->options;
   }
 }

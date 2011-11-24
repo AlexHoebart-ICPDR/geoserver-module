@@ -1,22 +1,26 @@
 <?php
 
 /**
- * ...
+ * @file
+ * Administration interface.
+ */
+
+/**
+ * Content type settings form.
  */
 function geoserver_content_type_settings($form, $form_state, $entity) {
 
-  // TODO: check if GS is configured
-
+  // TODO: check if GS is configured.
   $sql = geoserver_generate_sql($entity->type);
   $settings = variable_get('geoserver_content_type_settings', array());
   $settings = isset($settings[$entity->type]) ? $settings[$entity->type] : array();
   $geometry_column = '';
-  
+
   $fields = field_info_instances('node', $entity->type);
 
   foreach ($fields as $key => $field) {
     if ($field['widget']['module'] === 'postgis') {
-      $geometry_column = $key.'_geometry';
+      $geometry_column = $key . '_geometry';
     }
   }
 
@@ -86,12 +90,12 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#options' => array(
       'EPSG:4326' => '4326',
       'EPSG:900913' => '900913',
-     ),
+    ),
     '#default_value' => isset($settings['gwc_srs']) ? $settings['gwc_srs'] : 'EPSG:4326',
     '#states' => array(
-      'visible' => array( 
+      'visible' => array(
         ':input[name="gwc"]' => array(
-          'checked' => TRUE
+          'checked' => TRUE,
         ),
       ),
     ),
@@ -103,30 +107,36 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
   );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Save settings'),
     '#weight' => 10,
   );
 
   return $form;
 }
 
+/**
+ * Save content type settings.
+ */
 function geoserver_content_type_settings_submit($form, &$form_state) {
-  
+
   $setting_keys = array('layer', 'geometry_column', 'title', 'sld', 'gwc', 'gwc_srs', 'wfs', 'wms');
   $content_type = $form['content_type']['#value'];
-  
+
   $settings = variable_get('geoserver_content_type_settings', array());
   $settings[$content_type] = array();
-  
-  foreach($form as $key => $field) {
+
+  foreach ($form as $key => $field) {
     if (in_array($key, $setting_keys)) {
       $settings[$content_type][$key] = $field['#value'];
     }
   }
-  
+
   variable_set('geoserver_content_type_settings', $settings);
 }
 
+/**
+ * Generate content type specific SQL for GeoServer SQL layer.
+ */
 function geoserver_generate_sql($type) {
 
   $connection = Database::getConnection();
@@ -134,16 +144,16 @@ function geoserver_generate_sql($type) {
 
   $sql = array(
       'fields' => array("SELECT node.nid as id, node.title"),
-      'tables' => array("\nFROM ".$prefix."node"),
+      'tables' => array("\nFROM $prefix node"),
       'where' => array("\nWHERE node.type = '$type' and node.status = 1"),
   );
 
   $fields = field_info_instances('node', $type);
 
-  foreach($fields as $field_name => $field) {
+  foreach ($fields as $field_name => $field) {
 
     $field = field_info_field($field_name);
-    
+
     if ($field['cardinality'] === '1') {
       foreach ($field['storage']['details']['sql']['FIELD_LOAD_CURRENT'] as $table => $table_fields) {
         foreach ($table_fields as $table_field) {
@@ -154,5 +164,7 @@ function geoserver_generate_sql($type) {
     }
   }
 
-  return implode(', ', $sql['fields']).' '.implode(' ', $sql['tables']).' '.implode(' ', $sql['where']);
+  return implode(', ', $sql['fields']) . ' ' .
+         implode(' ', $sql['tables']) . ' ' .
+         implode(' ', $sql['where']);
 }
