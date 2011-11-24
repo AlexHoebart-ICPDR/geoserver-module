@@ -39,12 +39,12 @@ Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
             style.defaultStyle.cursor = 'pointer';
 
             // Prepend path of external graphics with geoserver_url if path is relative.
-            // This way OpenLayers can find graphics stored inside GeoServer.
+            // This way OpenLayers can find graphics that are stored and used inside GeoServer.
             jQuery.each(style.rules, function(index, rule) {
               if (rule.symbolizer.Point &&
-                  rule.symbolizer.Point.externalGraphic && (
-                  rule.symbolizer.Point.externalGraphic.substr(0, 4) != 'http' ||
-                  rule.symbolizer.Point.externalGraphic.substr(0, 1) != '/')) {
+                  rule.symbolizer.Point.externalGraphic &&
+                  rule.symbolizer.Point.externalGraphic.substr(0, 4) != 'http' &&
+                  rule.symbolizer.Point.externalGraphic.substr(0, 1) != '/') {
                 rule.symbolizer.Point.externalGraphic = options.geoserver_url+
                   'styles/'+rule.symbolizer.Point.externalGraphic;
               }
