@@ -251,6 +251,7 @@ function geoserver_settings_form() {
       '#type' => 'textfield',
       '#title' => t('URL'),
       '#default_value' => variable_get('geoserver_url', ''),
+      '#description' => 'The URL where GeoServer is running. Needs to end with a slash.',
     ),
     // TODO: fetch workspaces and namespaces over REST API and provide dropdown fields
     'geoserver_workspace' => array(

@@ -26,6 +26,7 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
     return array(
       'layer_type' => 'geoserver_wfs',
       'layer_handler' => 'geoserver_wfs',
+      'geoserver_url' => variable_get('geoserver_url', ''),
       'projection' => array('4326', '900913'),
       'baselayer' => FALSE,
       'typeName' => '', 'vector' => TRUE,
@@ -47,21 +48,24 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
           '#title' => t('URL'),
           '#description' => t('The URL of the WFS server.'),
           '#maxlength' => 1024,
-          '#default_value' => isset($this->data['protocol']['url']) ? $this->data['protocol']['url'] : ''
+          '#default_value' => isset($this->data['protocol']['url']) ? 
+              $this->data['protocol']['url'] : ''
         ),
         'typeName' => array(
           '#type' => 'textfield',
           '#title' => t('Type Name'),
           '#description' => t('The typename of the features requested.'),
           '#maxlength' => 100,
-          '#default_value' => isset($this->data['protocol']['typeName']) ? $this->data['protocol']['typeName'] : ''
+          '#default_value' => isset($this->data['protocol']['typeName']) ? 
+              $this->data['protocol']['typeName'] : ''
         ),
         'geometryName' => array(
           '#type' => 'textfield',
           '#title' => t('Geometry Name'),
           '#description' => t('The name of the geometry field in the GML returned from the WFS layer.'),
           '#maxlength' => 100,
-          '#default_value' => isset($this->data['protocol']['geometryName']) ? $this->data['protocol']['geometryName'] : ''
+          '#default_value' => isset($this->data['protocol']['geometryName']) ? 
+              $this->data['protocol']['geometryName'] : ''
         ),
       ),
       'sld' => array(
@@ -70,10 +74,6 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
         '#description' => t('URL to a Styled Layer Descriptor (SLD) file.'),
         '#maxlength' => 100,
         '#default_value' => isset($this->data['sld']) ? $this->data['sld'] : ''
-      ),
-      'layer_type' => array(
-        '#type' => 'hidden',
-        '#value' => 'geoserver_layer_type_wfs'
       ),
     );
   }
