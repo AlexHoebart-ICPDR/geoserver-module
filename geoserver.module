@@ -13,7 +13,30 @@ module_load_include('inc', 'geoserver', '/geoserver.openlayers');
  * Required for OpenLayers integration.
  */
 function geoserver_ctools_plugin_api($module, $api) {
-  return array('version' => 1);
+  if ($module == 'openlayers') {
+    switch ($api) {
+      case 'openlayers_layers':
+        return array('version' => 1);
+    }
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function geoserver_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'geoserver' && !empty($plugin)) {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function geoserver_ctools_plugin_type() {
+  return array(
+    'layer_types' => array()
+  );
 }
 
 /**
@@ -159,7 +182,7 @@ function geoserver_truncate($node) {
  */
 function geoserver_post($url, $content) {
 
-  $url = trim(variable_get('geoserver_url', ''), '/') . '/' . trim($url, '/');
+  $url = variable_get('geoserver_url', '') . trim($url, '/');
 
   $headers = array(
     'Content-Length: ' . drupal_strlen($content),
@@ -181,7 +204,7 @@ function geoserver_post($url, $content) {
 
   if ($result->code === 200) {
     watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  } 
+  }
   else {
     watchdog('geoserver', 'Requested %url with error %code: %message',
       array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
@@ -194,11 +217,10 @@ function geoserver_post($url, $content) {
  * Helper function to make a GET request.
  *
  * @param String $url Path relative to GeoServer URL.
- * @param String $content XML payload.
  */
 function geoserver_get($url) {
 
-  $url = trim(variable_get('geoserver_url', ''), '/') . '/' . trim($url, '/');
+  $url = variable_get('geoserver_url', '') . trim($url, '/');
 
   $request = curl_init($url);
 
@@ -212,7 +234,7 @@ function geoserver_get($url) {
 
   if ($result->code === 200) {
     watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  } 
+  }
   else {
     watchdog('geoserver', 'Requested %url with error %code: %message',
       array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
@@ -223,9 +245,6 @@ function geoserver_get($url) {
 
 /**
  * Helper function to make a POST request.
- *
- * @param String $url Path relative to GeoServer URL.
- * @param String $content XML payload.
  */
 function geoserver_admin() {
   $url = variable_get('geoserver_url', '');

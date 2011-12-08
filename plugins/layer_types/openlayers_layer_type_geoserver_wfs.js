@@ -7,7 +7,7 @@
 /**
  * Openlayer layer handler for GeoServer WFS layer
  */
-Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
+Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, map, options) {
 
   var layer = new OpenLayers.Layer.Vector(title, {
     drupalID: options.drupalID,
@@ -24,6 +24,7 @@ Drupal.openlayers.layer.geoserver_wfs = function(title, map, options) {
       srsName: 'EPSG:'+map.projection
     })
   });
+  
   
   // Apply GeoServer SLD.
   if (typeof options.sld === 'string') {

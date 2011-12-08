@@ -1,14 +1,26 @@
 <?php
-
 /**
  * @file
  * WFS Layer Type
  */
 
 /**
+ * Define the Ctools plugin options.
+ */
+$plugin = array(
+  'title' => t('GeoServer WFS'),
+  'description' => t('GeoServer specific Web Feature Service'),
+  'layer_type' => array(
+    'file' => 'openlayers_layer_type_geoserver_wfs.inc',
+    'class' => 'openlayers_layer_type_geoserver_wfs',
+    'parent' => 'openlayers_layer_type',
+  ),
+);
+
+/**
  * OpenLayers WFS Layer Type class
  */
-class geoserver_layer_type_wfs extends openlayers_layer_type {
+class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
 
   /**
    * Constructor.
@@ -28,8 +40,8 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
    */
   function options_init() {
     return array(
-      'layer_type' => 'geoserver_wfs',
-      'layer_handler' => 'geoserver_wfs',
+      'layer_type' => 'openlayers_layer_type_geoserver_wfs',
+      'layer_handler' => 'openlayers_layer_type_geoserver_wfs',
       'geoserver_url' => variable_get('geoserver_url', ''),
       'projection' => array('4326', '900913'),
       'baselayer' => FALSE,
@@ -86,7 +98,8 @@ class geoserver_layer_type_wfs extends openlayers_layer_type {
    * Render.
    */
   function render(&$map) {
-    drupal_add_js(drupal_get_path('module', 'geoserver') . '/layer_types/js/wfs.js');
+    drupal_add_js(drupal_get_path('module', 'geoserver') . 
+      '/plugins/layer_types/openlayers_layer_type_geoserver_wfs.js');
     return $this->options;
   }
 }

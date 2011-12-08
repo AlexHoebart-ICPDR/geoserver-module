@@ -9,18 +9,9 @@
  * Implements hook_openlayers_layer_types().
  */
 function geoserver_openlayers_layer_types() {
-  return array(
-    'geoserver_layer_type_wfs' => array(
-      'title' => t('GeoServer WFS'),
-      'description' => t('A GeoServer WFS layer.'),
-      'layer_type' => array(
-        'path' => drupal_get_path('module', 'geoserver') . '/layer_types',
-        'file' => 'wfs.inc',
-        'class' => 'geoserver_layer_type_wfs',
-        'parent' => 'openlayers_layer_type',
-      ),
-    ),
-  );
+  ctools_include('plugins');
+  $layer_types = ctools_get_plugins('geoserver', 'layer_types');
+  return $layer_types;
 }
 
 /**
@@ -28,6 +19,7 @@ function geoserver_openlayers_layer_types() {
  */
 function geoserver_openlayers_layers() {
 
+  $layers = array();
   $url = variable_get('geoserver_url', '');
   $workspace = variable_get('geoserver_workspace', '');
   $content_type_settings = variable_get('geoserver_content_type_settings', array());
@@ -67,13 +59,13 @@ function geoserver_openlayers_layers() {
       $layer->api_version = 1;
       $layer->name = $content_type . '_wfs';
       $layer->title = $setting['title'];
-      $layer->description = t('GeoServer WFS layer for content type %name',
+      $layer->description = t('Vector layer of content type %name',
           array('%name' => $setting['title']));
       $layer->data = array(
-        'layer_type' => 'geoserver_layer_type_wfs',
-        'sld' => $url . '/styles/' . $setting['sld'] . '.sld',
+        'layer_type' => 'openlayers_layer_type_geoserver_wfs',
+        'sld' => $url . 'styles/' . $setting['sld'] . '.sld',
         'protocol' => array(
-          'url' => $url . '/wfs',
+          'url' => $url . 'wfs',
           'typeName' => $setting['layer'],
           'geometryName' => $setting['geometry_column'],
           'featureNS' => variable_get('geoserver_namespace', ''),
