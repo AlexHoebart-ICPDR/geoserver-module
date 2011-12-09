@@ -9,52 +9,111 @@
  * Content type settings form.
  */
 function geoserver_content_type_settings($form, $form_state, $entity) {
-
-  // TODO: check if GS is configured.
-  $sql = geoserver_generate_sql($entity->type);
-  $settings = variable_get('geoserver_content_type_settings', array());
-  $settings = isset($settings[$entity->type]) ? $settings[$entity->type] : array();
-  $geometry_column = '';
-
-  $fields = field_info_instances('node', $entity->type);
-
-  foreach ($fields as $key => $field) {
-    if ($field['widget']['module'] === 'postgis') {
-      $geometry_column = $key . '_geometry';
-    }
+  
+  $layer = new GeoServerLayer($entity->type);
+  
+  // Display message about status of the GeoServer layer.
+  if ($layer->remoteExists() && empty($form_state['input'])) {
+    drupal_set_message(t('Found GeoServer layer %title', array('%title' => $layer->get('title'))));
+  } 
+  elseif (empty($form_state['input'])) {
+    drupal_set_message(t('GeoServer layer not found.'), 'warning');
   }
-
-  $form['content_type'] = array(
+  
+  $form['entity_type'] = array(
     '#type' => 'hidden',
     '#default_value' => $entity->type,
   );
-  $form['geometry_column'] = array(
-    '#type' => 'hidden',
-    '#default_value' => $geometry_column,
-  );
   $form['title'] = array(
-    '#type' => 'hidden',
-    '#default_value' => $entity->name,
-  );
-  $form['layer'] = array(
     '#type' => 'textfield',
-    '#title' => t('GeoServer layer'),
-    '#default_value' => isset($settings['layer']) ? $settings['layer'] : $entity->type,
-    '#rows' => 10,
-    '#description' => t('Name of corresponding GeoServer layer.'),
+    '#title' => t('Title'),
+    '#default_value' => $layer->get('title'),
+    '#description' => 'Layer title.',
   );
-  $form['sql_fieldset'] = array(
-    '#type' => 'fieldset',
+  $form['srid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Projection'),
+    '#default_value' => POSTGIS_DEFAULT_SRID,
+    '#description' => t('TODO: fetch from data'),
+  );
+  $form['sql'] = array(
+    '#type' => 'textarea',
     '#title' => t('SQL'),
+    '#default_value' =>  $layer->get('sql'),
+    '#rows' => 8,
+    '#description' => t('Generated SQL.'),
+  );
+  $form['bounding_box'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Bounding Box'),
+    '#description' => t('TODO: fetch from data'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['sql_fieldset']['sql'] = array(
-    '#type' => 'textarea',
-    '#default_value' =>  $sql,
-    '#rows' => 10,
-    '#description' => t('Generated SQL.'),
+  $form['bounding_box']['minx'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Min Y'),
+    '#size' => 4,
+    '#default_value' => '5.0',
   );
+  $form['bounding_box']['miny'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Min Y'),
+    '#size' => 4,
+    '#default_value' => '47.0',
+  );
+  $form['bounding_box']['maxx'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Max X'),
+    '#size' => 4,
+    '#default_value' => '16.0',
+  );
+  $form['bounding_box']['maxy'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Max Y'),
+    '#size' => 4,
+    '#default_value' => '56.0',
+  );
+  
+  $form['geometry_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Geometry name'),
+    '#default_value' => 'field_achse_geometry',
+    '#description' => t('...'),
+  );
+  $form['geometry_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Geometry type'),
+    '#default_value' => 'MultiLineString', // $layer->get('geometry_type'),
+    '#options' => array(
+      'Geometry' => 'Geometry',
+      'GeometryCollection' => 'GeometryCollection',
+      'Point' => 'Point',
+      'MultiPoint' => 'MultiPoint',
+      'LineString' => 'LineString',
+      'MultiLineString' => 'MultiLineString',
+      'Polygon' => 'Polygon',
+      'MultiPolygon' => 'MultiPolygon',
+    ),
+    '#description' => '...',
+  );
+  
+  $options = array('');
+  $result = geoserver_get('rest/styles.json');
+  if ($result->code == 200) {
+    $data = json_decode($result->data);
+    foreach ($data->styles->style as $style) {
+      $options[$style->name] = $style->name;
+    }
+  }
+  $form['styles'] = array(
+    '#type' => 'select',
+    '#title' => t('Styles'),
+    '#default_value' => $layer->get('style'),
+    '#options' => $options,
+    '#description' => $layer->get('style'),
+  );
+  
   $form['sld'] = array(
     '#type' => 'textfield',
     '#title' => t('GeoServer style'),
@@ -105,6 +164,10 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#title' => t('Provide an untiled OpenLayers WMS layer.'),
     '#default_value' => isset($settings['wms']) ? $settings['wms'] : 0,
   );
+  $form['publish'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Update GeoServer configuration.'),
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save settings'),
@@ -118,52 +181,19 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
  * Save content type settings.
  */
 function geoserver_content_type_settings_submit($form, &$form_state) {
-
-  $setting_keys = array('layer', 'geometry_column', 'title', 'sld', 'gwc', 'gwc_srs', 'wfs', 'wms');
-  $content_type = $form['content_type']['#value'];
-
-  $settings = variable_get('geoserver_content_type_settings', array());
-  $settings[$content_type] = array();
-
-  foreach ($form as $key => $field) {
-    if (in_array($key, $setting_keys)) {
-      $settings[$content_type][$key] = $field['#value'];
-    }
-  }
-
-  variable_set('geoserver_content_type_settings', $settings);
+  $layer = new GeoServerLayer($form['entity_type']['#value']);
+  $layer->set('title', $form['title']['#value']);
+  $layer->set('sql', $form['sql']['#value']);
+  $layer->set('minx', $form['bounding_box']['minx']['#value']);
+  $layer->set('miny', $form['bounding_box']['miny']['#value']);
+  $layer->set('maxx', $form['bounding_box']['maxx']['#value']);
+  $layer->set('maxy', $form['bounding_box']['maxy']['#value']);
+  $layer->set('geometry_name', $form['geometry_name']['#value']);
+  $layer->set('geometry_type', $form['geometry_type']['#value']);
+  $layer->set('srid', $form['srid']['#value']);
+  $layer->set('publish', $form['publish']['#value']);
+  $layer->save();
 }
 
-/**
- * Generate content type specific SQL for GeoServer SQL layer.
- */
-function geoserver_generate_sql($type) {
 
-  $connection = Database::getConnection();
-  $prefix = $connection->tablePrefix();
-
-  $sql = array(
-      'fields' => array("SELECT node.nid as id, node.title"),
-      'tables' => array("\nFROM $prefix node"),
-      'where' => array("\nWHERE node.type = '$type' and node.status = 1"),
-  );
-
-  $fields = field_info_instances('node', $type);
-
-  foreach ($fields as $field_name => $field) {
-
-    $field = field_info_field($field_name);
-
-    if ($field['cardinality'] === '1') {
-      foreach ($field['storage']['details']['sql']['FIELD_LOAD_CURRENT'] as $table => $table_fields) {
-        foreach ($table_fields as $table_field) {
-          $sql['fields'][] = $table_field;
-        }
-        $sql['tables'][] = "\nLEFT JOIN $prefix$table ON node.nid = $table.entity_id";
-      }
-    }
-  }
-
-  return implode(', ', $sql['fields']) . ' ' . implode(' ', $sql['tables']) . ' ' . implode(' ', $sql['where']);
-}
 

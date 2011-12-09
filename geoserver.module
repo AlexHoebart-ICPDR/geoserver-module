@@ -6,6 +6,7 @@
  */
 
 module_load_include('inc', 'geoserver', '/geoserver.openlayers');
+module_load_include('inc', 'geoserver', '/geoserver.layer');
 
 /**
  * Implements hook_ctools_plugin_api().
@@ -178,16 +179,27 @@ function geoserver_truncate($node) {
  * Helper function to make a POST request.
  *
  * @param String $url Path relative to GeoServer URL.
- * @param String $content XML payload.
+ * @param String $content Payload.
  */
 function geoserver_post($url, $content) {
 
   $url = variable_get('geoserver_url', '') . trim($url, '/');
 
-  $headers = array(
-    'Content-Length: ' . drupal_strlen($content),
-    'Content-type: text/xml',
-  );
+  if (substr($url, -3) == 'xml') {
+    $headers = array(
+      'Content-Length: ' . drupal_strlen($content),
+      'Content-type: text/xml',
+    );
+  }
+  elseif (substr($url, -4) == 'json') {
+    $content = json_encode($content);
+    $headers = array(
+      'Content-type: application/json'
+    );
+  }
+  else {
+    throw new Exception('Unsupported format.');
+  }
 
   $request = curl_init($url);
 
@@ -198,6 +210,63 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
 
   $result = new stdClass();
+  $result->data = curl_exec($request);
+  $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  curl_close($request);
+
+  if ($result->code === 200) {
+    watchdog('geoserver', 'Requested %url.', array('%url' => $url));
+  }
+  else {
+    watchdog('geoserver', 'Requested %url with error %code: %message',
+      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
+  }
+
+  return $result;
+}
+
+/**
+ * Helper function to make a PUT request.
+ *
+ * @param String $url Path relative to GeoServer URL.
+ * @param String $content Payload.
+ */
+function geoserver_put($url, $content) {
+
+  $url = variable_get('geoserver_url', '') . trim($url, '/');
+  
+  if (substr($url, -3) == 'xml') {
+    $headers = array(
+      'Content-Length: ' . drupal_strlen($content),
+      'Content-type: text/xml',
+    );
+  }
+  elseif (substr($url, -4) == 'json') {
+    $content = json_encode($content);
+    $headers = array(
+      'Content-type: application/json'
+    );
+  }
+  else {
+    throw new Exception('Unsupported format.');
+  }
+  
+  // Create temporary file from payload.
+  $file = tmpfile();
+  fwrite($file, $content);
+  fseek($file, 0);
+
+  $request = curl_init($url);
+
+  curl_setopt($request, CURLOPT_PUT, TRUE);
+  curl_setopt($request, CURLOPT_INFILE, $file);
+  curl_setopt($request, CURLOPT_INFILESIZE, drupal_strlen($content));
+  curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
+  curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
+
+  $result = new stdClass();
+  $result->url  = $url;
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
@@ -291,12 +360,21 @@ function geoserver_menu() {
  *  Function to generate the form setting array
  */
 function geoserver_settings_form() {
+  
+  $url = variable_get('geoserver_url', '');
+  
+  if (!empty($url)) {
+//    $workspaces = geoserver_get('rest/workspaces/wika.json');
+//    $namespaces = geoserver_get('rest/workspaces/wika/datastores.json');
+//    dvm($workspaces);
+//    dvm($namespaces);
+  }
 
   $form = array(
     'geoserver_url' => array(
       '#type' => 'textfield',
       '#title' => t('URL'),
-      '#default_value' => variable_get('geoserver_url', ''),
+      '#default_value' => $url,
       '#description' => 'The URL where GeoServer is running. Needs to end with a slash.',
     ),
     // TODO: fetch workspaces and namespaces over REST API
@@ -311,6 +389,33 @@ function geoserver_settings_form() {
       '#title' => t('Namespace URI'),
       '#default_value' => variable_get('geoserver_namespace', ''),
     ),
+    'geoserver_datastore' => array(
+      '#type' => 'textfield',
+      '#title' => t('Datastore'),
+      '#default_value' => variable_get('geoserver_datastore', ''),
+    ),
+    'geoserver_datastore' => array(
+      '#type' => 'textfield',
+      '#title' => t('Datastore'),
+      '#default_value' => variable_get('geoserver_datastore', ''),
+    ),
+    'nativeBoundingBox' => array(
+      '#type' => 'fieldset', 
+      '#title' => t('Native Bounding Box'),
+      'minx' => array(
+        '#type' => 'textfield',
+        '#title' => t('minx'),
+        '#size' => 8,
+        '#default_value' => variable_get('geoserver_native_minx', ''),
+      ),
+      'miny' => array(
+        '#type' => 'textfield',
+        '#title' => t('miny'),
+        '#parents' => array('minx'),
+        '#size' => 8,
+        '#default_value' => variable_get('geoserver_native_minx', ''),
+      ),
+    )
   );
   return system_settings_form($form);
 }
