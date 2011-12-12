@@ -191,8 +191,10 @@ function geoserver_content_type_settings_submit($form, &$form_state) {
   $layer->set('geometry_name', $form['geometry_name']['#value']);
   $layer->set('geometry_type', $form['geometry_type']['#value']);
   $layer->set('srid', $form['srid']['#value']);
-  $layer->set('publish', $form['publish']['#value']);
-  $layer->save();
+  $layer->saveCustom();
+  if ($form['publish']['#value']) {
+    $layer->saveRemote();
+  }
 }
 
 

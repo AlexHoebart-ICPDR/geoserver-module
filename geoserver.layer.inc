@@ -122,17 +122,12 @@ class GeoServerLayer {
     return $this->remote_exists;
   }
   
-  public function save() {
+  public function saveCustom() {
     
     // Save custom settings.
     $settings = variable_get('geoserver_entity_settings', array());
     $settings[$this->type] = $this->custom;
     variable_set('geoserver_entity_settings', $settings);
-    
-    // Save remote settings.
-    if ($this->custom->publish) {
-      $this->saveRemote();
-    }
   }
   
   private function saveRemote() {
