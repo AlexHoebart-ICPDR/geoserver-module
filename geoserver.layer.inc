@@ -107,12 +107,21 @@ class GeoServerLayer {
         $data = json_decode($result->data);
         $this->remote->title = $data->featureType->title;
         $this->remote->sql = $data->featureType->metadata->entry[2]->virtualTable->sql;
+        $this->remote->minx = $data->featureType->nativeBoundingBox->minx;
+        $this->remote->miny = $data->featureType->nativeBoundingBox->miny;
+        $this->remote->maxx = $data->featureType->nativeBoundingBox->maxx;
+        $this->remote->maxy = $data->featureType->nativeBoundingBox->maxy;
+        $this->remote->srid = drupal_substr($data->featureType->srs, 5);
+        $this->remote->geometry_name = $data->featureType->metadata->entry[2]->virtualTable->geometry->name;
+        $this->remote->geometry_type = $data->featureType->metadata->entry[2]->virtualTable->geometry->type;
         
         // Fetch style name from layer configuration.
         $result = geoserver_get('rest/layers/' . $this->type .'.json');
         if ($result->code == 200) {
           $data = json_decode($result->data);
           $this->remote->style = $data->layer->defaultStyle->name;
+        } else {
+          $this->remote->style = FALSE;
         }
       } else {
         $this->remote_exists = FALSE;

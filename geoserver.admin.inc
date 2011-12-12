@@ -33,7 +33,7 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
   $form['srid'] = array(
     '#type' => 'textfield',
     '#title' => t('Projection'),
-    '#default_value' => POSTGIS_DEFAULT_SRID,
+    '#default_value' => $layer->get('srid'),
     '#description' => t('TODO: fetch from data'),
   );
   $form['sql'] = array(
@@ -54,37 +54,37 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#type' => 'textfield',
     '#title' => t('Min Y'),
     '#size' => 4,
-    '#default_value' => '5.0',
+    '#default_value' => $layer->get('minx'),
   );
   $form['bounding_box']['miny'] = array(
     '#type' => 'textfield',
     '#title' => t('Min Y'),
     '#size' => 4,
-    '#default_value' => '47.0',
+    '#default_value' => $layer->get('miny'),
   );
   $form['bounding_box']['maxx'] = array(
     '#type' => 'textfield',
     '#title' => t('Max X'),
     '#size' => 4,
-    '#default_value' => '16.0',
+    '#default_value' => $layer->get('maxx'),
   );
   $form['bounding_box']['maxy'] = array(
     '#type' => 'textfield',
     '#title' => t('Max Y'),
     '#size' => 4,
-    '#default_value' => '56.0',
+    '#default_value' => $layer->get('maxy'),
   );
   
   $form['geometry_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Geometry name'),
-    '#default_value' => 'field_achse_geometry',
+    '#default_value' => $layer->get('geometry_name'),
     '#description' => t('...'),
   );
   $form['geometry_type'] = array(
     '#type' => 'select',
     '#title' => t('Geometry type'),
-    '#default_value' => 'MultiLineString', // $layer->get('geometry_type'),
+    '#default_value' => $layer->get('geometry_type'),
     '#options' => array(
       'Geometry' => 'Geometry',
       'GeometryCollection' => 'GeometryCollection',
@@ -114,13 +114,6 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#description' => $layer->get('style'),
   );
   
-  $form['sld'] = array(
-    '#type' => 'textfield',
-    '#title' => t('GeoServer style'),
-    '#default_value' => isset($settings['sld']) ? $settings['sld'] : $entity->type,
-    '#rows' => 10,
-    '#description' => t('Name of corresponding GeoServer style.'),
-  );
   $form['style_fieldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Style'),
