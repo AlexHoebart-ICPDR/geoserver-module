@@ -9,6 +9,18 @@ module_load_include('inc', 'geoserver', '/geoserver.openlayers');
 module_load_include('inc', 'geoserver', '/geoserver.layer');
 
 /**
+ * Implements hook_cron().
+ * 
+ * Access web interface of GeoServer every hour to keep session alive.
+ */
+function geoserver_cron() {
+  if (time() >= variable_get('geoserver_next_execution', 0)) {
+    geoserver_get('web/');
+    variable_set('geoserver_next_execution', time() + 3600);
+  }
+}
+
+/**
  * Implements hook_ctools_plugin_api().
  *
  * Required for OpenLayers integration.
