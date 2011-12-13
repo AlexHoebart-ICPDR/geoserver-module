@@ -161,10 +161,30 @@ class GeoServerLayer {
         if ($result->code == 200) {
           $data = json_decode($result->data);
           $this->remote->style = $data->layer->defaultStyle->name;
-        } else {
+          
+          // Fetch SLD from style.
+          $result = geoserver_get('rest/styles/' . $this->remote->style .'.json');
+          if ($result->code == 200) {
+            $data = json_decode($result->data);
+            $result = geoserver_get('rest/styles/' . $this->remote->style .'.sld');
+            
+            if ($result->code == 200) {
+              $sld = new DOMDocument();
+              $sld->formatOutput = TRUE;
+              $sld->loadXML($result->data);
+            }
+            $this->remote->sld = $result->code == 200 ? $sld->saveXML() : '';
+          }
+          else {
+            $this->remote->sld = '';
+          }
+        } 
+        else {
           $this->remote->style = FALSE;
+          $this->remote->sld = '';
         }
-      } else {
+      } 
+      else {
         $this->remote_exists = FALSE;
       }
       $this->remote_loaded = TRUE;
