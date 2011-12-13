@@ -209,6 +209,11 @@ function geoserver_post($url, $content) {
       'Content-type: application/json'
     );
   }
+  elseif (substr($url, -3) == 'sld') {
+    $headers = array(
+      'Content-type: application/vnd.ogc.sld+xml'
+    );
+  }
   else {
     throw new Exception('Unsupported format.');
   }
@@ -257,6 +262,11 @@ function geoserver_put($url, $content) {
     $content = json_encode($content);
     $headers = array(
       'Content-type: application/json'
+    );
+  }
+  elseif (substr($url, -3) == 'sld') {
+    $headers = array(
+      'Content-type: application/vnd.ogc.sld+xml'
     );
   }
   else {
