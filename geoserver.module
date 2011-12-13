@@ -322,6 +322,7 @@ function geoserver_get($url, $uid = NULL) {
   curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile($uid));
 
   $result = new stdClass();
+  $result->url = $url;
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
@@ -386,13 +387,39 @@ function geoserver_menu() {
  */
 function geoserver_settings_form() {
   
-  $url = variable_get('geoserver_url', '');
+  $url        = variable_get('geoserver_url', '');
+  $namespace  = variable_get('geoserver_namespace', '');
+  $workspace  = variable_get('geoserver_workspace', '');
+  $datastore  = variable_get('geoserver_datastore', '');
+  $workspaces = array();
+  $datastores = array();
   
   if (!empty($url)) {
-//    $workspaces = geoserver_get('rest/workspaces/wika.json');
-//    $namespaces = geoserver_get('rest/workspaces/wika/datastores.json');
-//    dvm($workspaces);
-//    dvm($namespaces);
+    
+    $result = geoserver_get('rest/workspaces.json');
+    if ($result->code == 200) {
+      $data = json_decode($result->data);
+      foreach ($data->workspaces->workspace as $ws) {
+        $workspaces[$ws->name] = $ws->name;
+      }
+    }
+    
+    if (!empty($workspace)) {
+      
+      $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
+      if ($result->code == 200) {
+        $data = json_decode($result->data);
+        $namespace = $data->namespace->uri;
+      }
+      
+      $result = geoserver_get('rest/workspaces/' . $workspace . '/datastores.json');
+      if ($result->code == 200) {
+        $data = json_decode($result->data);
+        foreach ($data->dataStores->dataStore as $ds) {
+          $datastores[$ds->name] = $ds->name;
+        }
+      }
+    }
   }
 
   $form = array(
@@ -402,47 +429,64 @@ function geoserver_settings_form() {
       '#default_value' => $url,
       '#description' => 'The URL where GeoServer is running. Needs to end with a slash.',
     ),
-    // TODO: fetch workspaces and namespaces over REST API
-    // and provide dropdown fields.
     'geoserver_workspace' => array(
-      '#type' => 'textfield',
+      '#type' => 'select',
       '#title' => t('Workspace'),
-      '#default_value' => variable_get('geoserver_workspace', ''),
+      '#options' => $workspaces,
+      '#default_value' => $workspace,
+      '#ajax' => array(
+        'callback' => 'geoserver_settings_form_workspace_changed',
+        'wrapper' => 'geoserver_namespace_datastore'
+      ),
     ),
     'geoserver_namespace' => array(
       '#type' => 'textfield',
       '#title' => t('Namespace URI'),
-      '#default_value' => variable_get('geoserver_namespace', ''),
+      '#disabled' => TRUE,
+      '#default_value' => $namespace,
+      '#prefix' => '<div id="geoserver_namespace_datastore">',
     ),
     'geoserver_datastore' => array(
-      '#type' => 'textfield',
+      '#type' => 'select',
       '#title' => t('Datastore'),
-      '#default_value' => variable_get('geoserver_datastore', ''),
+      '#options' => $datastores,
+      '#default_value' => $datastore,
+      '#suffix' => '</div>',
     ),
-    'geoserver_datastore' => array(
-      '#type' => 'textfield',
-      '#title' => t('Datastore'),
-      '#default_value' => variable_get('geoserver_datastore', ''),
-    ),
-    'nativeBoundingBox' => array(
-      '#type' => 'fieldset', 
-      '#title' => t('Native Bounding Box'),
-      'minx' => array(
-        '#type' => 'textfield',
-        '#title' => t('minx'),
-        '#size' => 8,
-        '#default_value' => variable_get('geoserver_native_minx', ''),
-      ),
-      'miny' => array(
-        '#type' => 'textfield',
-        '#title' => t('miny'),
-        '#parents' => array('minx'),
-        '#size' => 8,
-        '#default_value' => variable_get('geoserver_native_minx', ''),
-      ),
-    )
   );
   return system_settings_form($form);
+}
+
+function geoserver_settings_form_workspace_changed($form, $form_state) {
+  
+  $workspace  = $form['geoserver_workspace']['#value'];
+  $namespace  = '';
+  $datastores = array();
+  
+  if (!empty($workspace)) {
+      
+    $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
+    if ($result->code == 200) {
+      $data = json_decode($result->data);
+      $namespace = $data->namespace->uri;
+    }
+
+    $result = geoserver_get('rest/workspaces/' . $workspace . '/datastores.json');
+    if ($result->code == 200) {
+      $data = json_decode($result->data);
+      foreach ($data->dataStores->dataStore as $ds) {
+        $datastores[$ds->name] = $ds->name;
+      }
+    }
+  }
+  
+  $form['geoserver_namespace']['#value'] = $namespace;
+  $form['geoserver_datastore']['#options'] = $datastores;
+  
+  return array(
+      $form['geoserver_namespace'],
+      $form['geoserver_datastore'],
+  );
 }
 
 /**
