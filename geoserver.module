@@ -11,11 +11,14 @@ module_load_include('inc', 'geoserver', '/geoserver.layer');
 /**
  * Implements hook_cron().
  * 
- * Access web interface of GeoServer every hour to keep session alive.
+ * Access web interface of GeoServer every hour with every active user to keep sessions alive.
  */
 function geoserver_cron() {
   if (time() >= variable_get('geoserver_next_execution', 0)) {
-    geoserver_get('web/');
+    $users = db_query('SELECT uid FROM {sessions} WHERE uid != 0')->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($users as $uid) {
+      geoserver_get('web/', $uid);
+    }
     variable_set('geoserver_next_execution', time() + 3600);
   }
 }
@@ -309,14 +312,14 @@ function geoserver_put($url, $content) {
  *
  * @param String $url Path relative to GeoServer URL.
  */
-function geoserver_get($url) {
+function geoserver_get($url, $uid = NULL) {
 
   $url = variable_get('geoserver_url', '') . trim($url, '/');
 
   $request = curl_init($url);
 
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
+  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile($uid));
 
   $result = new stdClass();
   $result->data = curl_exec($request);
@@ -463,8 +466,11 @@ function geoserver_content_type_settings_access($entity) {
  *
  * @return string Path of GeoServer's session cookie.
  */
-function _geoserver_get_cookiefile() {
-  global $user;
-  return file_directory_temp() . '/geoserver_session_user_' . $user->uid;
+function _geoserver_get_cookiefile($uid = NULL) {
+  if (empty($uid)) {
+    global $user;
+    $uid = $user->uid;
+  }
+  return file_directory_temp() . '/geoserver_session_user_' . $uid;
 }
 
