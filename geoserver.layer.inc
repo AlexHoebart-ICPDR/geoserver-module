@@ -193,16 +193,14 @@ class GeoServerLayer {
   }
   
   public function saveCustom() {
-    
-    // Save custom settings.
     $settings = variable_get('geoserver_entity_settings', array());
     $settings[$this->type] = $this->custom;
     variable_set('geoserver_entity_settings', $settings);
   }
   
-  private function saveRemote() {
+  public function saveRemote() {
     
-    $data = array(
+    $featureType = array(
       'featureType' => array(
         'name'       => $this->type,
         'nativeName' => $this->type,
@@ -259,7 +257,7 @@ class GeoServerLayer {
   
     if ($this->remoteExists()) {
 
-      $result = geoserver_put($url . '/' . $this->type . '.json', $data);
+      $result = geoserver_put($url . '/' . $this->type . '.json', $featureType);
 
       if ($result->code == 200) {
         $type = 'status';
@@ -282,7 +280,7 @@ class GeoServerLayer {
     }
     else {
 
-      $result = geoserver_post($url . '.json', $data);
+      $result = geoserver_post($url . '.json', $featureType);
 
       if ($result->code == 201) {
         $type = 'status';
@@ -303,6 +301,27 @@ class GeoServerLayer {
         );
       }
     }
+    
+    if ($type == 'status') {
+      // Update GeoServer layer and style.
+      $layer = array(
+        'layer' => array(
+          'name' => $this->type,
+          'type' => 'VECTOR',
+          'defaultStyle' => array(
+            'name' => $this->custom->style
+          ),
+          'resource' => array(
+            '@class' => 'featureType',
+            'name' => $this->type,
+          ),
+          'enabled' => TRUE
+        ),
+      );
+      geoserver_put('rest/layers/' . $this->type .'.json', $layer);
+      geoserver_put('rest/styles/' . $this->custom->style . '.sld', $this->custom->sld);
+    }
+
     drupal_set_message($message, $type);
   }
   
