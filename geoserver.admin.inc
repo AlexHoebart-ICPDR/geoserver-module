@@ -14,10 +14,13 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
   
   // Display message about status of the GeoServer layer.
   if ($layer->remoteExists() && empty($form_state['input'])) {
-    drupal_set_message(t('Found GeoServer layer %title', array('%title' => $layer->get('title'))));
+    drupal_set_message(t('Found remote GeoServer settings.'));
   } 
+  elseif ($layer->customExists() && empty($form_state['input'])) {
+    drupal_set_message(t('Found custom GeoServer settings.'));
+  }
   elseif (empty($form_state['input'])) {
-    drupal_set_message(t('GeoServer layer not found.'), 'warning');
+    drupal_set_message(t('Found default GeoServer settings.'));
   }
   
   $form['entity_type'] = array(
