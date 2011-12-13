@@ -113,8 +113,7 @@ class GeoServerLayer {
       // Fetch SLD from style.
       $result = geoserver_get('rest/styles/' . $this->type .'.json');
       if ($result->code == 200) {
-        $data = json_decode($result->data);
-        $result = geoserver_get('styles/' . $data->style->filename);
+        $result = geoserver_get('styles/' . $result->data->style->filename);
         $this->default->sld = $result->code == 200 ? $result->data : '';
       }
       else {
@@ -145,27 +144,24 @@ class GeoServerLayer {
       $result = geoserver_get('rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes/'. $this->type .'.json');
       if ($result->code == 200) {
         $this->remote_exists = TRUE;
-        $data = json_decode($result->data);
-        $this->remote->title = $data->featureType->title;
-        $this->remote->sql = $data->featureType->metadata->entry[2]->virtualTable->sql;
-        $this->remote->minx = $data->featureType->nativeBoundingBox->minx;
-        $this->remote->miny = $data->featureType->nativeBoundingBox->miny;
-        $this->remote->maxx = $data->featureType->nativeBoundingBox->maxx;
-        $this->remote->maxy = $data->featureType->nativeBoundingBox->maxy;
-        $this->remote->srid = drupal_substr($data->featureType->srs, 5);
-        $this->remote->geometry_name = $data->featureType->metadata->entry[2]->virtualTable->geometry->name;
-        $this->remote->geometry_type = $data->featureType->metadata->entry[2]->virtualTable->geometry->type;
+        $this->remote->title = $result->data->featureType->title;
+        $this->remote->sql = $result->data->featureType->metadata->entry[2]->virtualTable->sql;
+        $this->remote->minx = $result->data->featureType->nativeBoundingBox->minx;
+        $this->remote->miny = $result->data->featureType->nativeBoundingBox->miny;
+        $this->remote->maxx = $result->data->featureType->nativeBoundingBox->maxx;
+        $this->remote->maxy = $result->data->featureType->nativeBoundingBox->maxy;
+        $this->remote->srid = drupal_substr($result->data->featureType->srs, 5);
+        $this->remote->geometry_name = $result->data->featureType->metadata->entry[2]->virtualTable->geometry->name;
+        $this->remote->geometry_type = $result->data->featureType->metadata->entry[2]->virtualTable->geometry->type;
         
         // Fetch style name from layer configuration.
         $result = geoserver_get('rest/layers/' . $this->type .'.json');
         if ($result->code == 200) {
-          $data = json_decode($result->data);
-          $this->remote->style = $data->layer->defaultStyle->name;
+          $this->remote->style = $result->data->layer->defaultStyle->name;
           
           // Fetch SLD from style.
           $result = geoserver_get('rest/styles/' . $this->remote->style .'.json');
           if ($result->code == 200) {
-            $data = json_decode($result->data);
             $result = geoserver_get('rest/styles/' . $this->remote->style .'.sld');
             
             if ($result->code == 200) {

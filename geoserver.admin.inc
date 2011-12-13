@@ -88,8 +88,7 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
   $options = array('');
   $result = geoserver_get('rest/styles.json');
   if ($result->code == 200) {
-    $data = json_decode($result->data);
-    foreach ($data->styles->style as $style) {
+    foreach ($result->data->styles->style as $style) {
       $options[$style->name] = $style->name;
     }
   } 

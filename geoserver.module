@@ -326,6 +326,10 @@ function geoserver_get($url, $uid = NULL) {
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
+  
+  if (substr($result->url, -4) == 'json' && $result->code == 200) {
+    $result->data = json_decode($result->data);
+  }
 
   if ($result->code === 200) {
     watchdog('geoserver', 'Requested %url.', array('%url' => $url));
@@ -398,8 +402,7 @@ function geoserver_settings_form() {
     
     $result = geoserver_get('rest/workspaces.json');
     if ($result->code == 200) {
-      $data = json_decode($result->data);
-      foreach ($data->workspaces->workspace as $ws) {
+      foreach ($result->data->workspaces->workspace as $ws) {
         $workspaces[$ws->name] = $ws->name;
       }
     }
@@ -408,14 +411,12 @@ function geoserver_settings_form() {
       
       $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
       if ($result->code == 200) {
-        $data = json_decode($result->data);
-        $namespace = $data->namespace->uri;
+        $namespace = $result->data->namespace->uri;
       }
       
       $result = geoserver_get('rest/workspaces/' . $workspace . '/datastores.json');
       if ($result->code == 200) {
-        $data = json_decode($result->data);
-        foreach ($data->dataStores->dataStore as $ds) {
+        foreach ($result->data->dataStores->dataStore as $ds) {
           $datastores[$ds->name] = $ds->name;
         }
       }
@@ -467,14 +468,12 @@ function geoserver_settings_form_workspace_changed($form, $form_state) {
       
     $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
     if ($result->code == 200) {
-      $data = json_decode($result->data);
-      $namespace = $data->namespace->uri;
+      $namespace = $result->data->namespace->uri;
     }
 
     $result = geoserver_get('rest/workspaces/' . $workspace . '/datastores.json');
     if ($result->code == 200) {
-      $data = json_decode($result->data);
-      foreach ($data->dataStores->dataStore as $ds) {
+      foreach ($result->data->dataStores->dataStore as $ds) {
         $datastores[$ds->name] = $ds->name;
       }
     }
@@ -483,10 +482,7 @@ function geoserver_settings_form_workspace_changed($form, $form_state) {
   $form['geoserver_namespace']['#value'] = $namespace;
   $form['geoserver_datastore']['#options'] = $datastores;
   
-  return array(
-      $form['geoserver_namespace'],
-      $form['geoserver_datastore'],
-  );
+  return array($form['geoserver_namespace'], $form['geoserver_datastore']);
 }
 
 /**
