@@ -31,19 +31,16 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#type' => 'textfield',
     '#title' => t('Title'),
     '#default_value' => $layer->get('title'),
-    '#description' => 'Layer title.',
   );
   $form['srid'] = array(
     '#type' => 'textfield',
     '#title' => t('Projection'),
     '#default_value' => $layer->get('srid'),
-    '#description' => t('TODO: fetch from data'),
   );
   $form['geometry_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Geometry name'),
     '#default_value' => $layer->get('geometry_name'),
-    '#description' => t('...'),
   );
   $form['geometry_type'] = array(
     '#type' => 'select',
@@ -59,7 +56,6 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
       'Polygon' => 'Polygon',
       'MultiPolygon' => 'MultiPolygon',
     ),
-    '#description' => t('...'),
   );
   
   $form['bounding_box'] = array(
@@ -111,7 +107,6 @@ function geoserver_content_type_settings($form, $form_state, $entity) {
     '#title' => t('Style'),
     '#default_value' => $layer->get('style'),
     '#options' => $options,
-    '#description' => t('Name of GeoServer style.'),
     '#ajax' => array(
       'callback' => 'geoserver_update_style_sld',
       'wrapper' => 'geoserver_style_sld'
