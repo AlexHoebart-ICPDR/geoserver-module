@@ -81,6 +81,46 @@ class GeoServerLayer {
       $this->default->title = $entity->name;
       $this->default->style = $this->type;
       $this->default->sql = $this->getDefaultSQL();
+      
+      $fields = field_info_instances('node', $this->type);
+      foreach ($fields as $field_name => $field) {
+        $field = field_info_field($field_name);
+        if ($field['type'] === 'postgis') {
+          break;
+        }
+      }
+      
+      // Map geometry types from PostGIS to GeoServer.
+      $mapping = array(
+        'point' => 'Point',
+        'linestring' => 'LineString',
+        'polygon' => 'Polygon',
+        'multipoint' => 'MultiPoint',
+        'multilinestring' => 'MultiLineString',
+        'multipolygon'  => 'MultiPolygon',
+        'geometrycollection' => 'GeometryCollection',
+      );
+      $bbox = postgis_field_extent($field);
+      
+      $this->default->minx = $bbox->minx;
+      $this->default->miny = $bbox->miny;
+      $this->default->maxx = $bbox->maxy;
+      $this->default->maxy = $bbox->maxx;
+      $this->default->srid = $field['settings']['srid'];
+      $this->default->geometry_name = $field['storage']['details']['sql']['FIELD_LOAD_CURRENT']['field_data_' . $field['field_name']]['geometry'];
+      $this->default->geometry_type = $mapping[$field['settings']['type']];
+      
+      // Fetch SLD from style.
+      $result = geoserver_get('rest/styles/' . $this->type .'.json');
+      if ($result->code == 200) {
+        $data = json_decode($result->data);
+        $result = geoserver_get('styles/' . $data->style->filename);
+        $this->default->sld = $result->code == 200 ? $result->data : '';
+      }
+      else {
+        $this->default->sld = '';
+      }
+      
       $this->default_loaded = TRUE;
     }
   }
@@ -91,7 +131,8 @@ class GeoServerLayer {
       if (isset($settings[$this->type])) {
         $this->custom_exists = TRUE;
         $this->custom = $settings[$this->type];
-      } else {
+      } 
+      else {
         $this->custom_exists = FALSE;
       }
       $this->custom_loaded = TRUE;
