@@ -91,6 +91,10 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         '#maxlength' => 100,
         '#default_value' => isset($this->data['sld']) ? $this->data['sld'] : ''
       ),
+      'layer_type' => array(
+        '#type' => 'hidden',
+        '#value' => 'openlayers_layer_type_geoserver_wfs'
+      )
     );
   }
 
