@@ -576,6 +576,21 @@ abstract class geoserver_layer_type {
     $result = geoserver_put($url . '/' . $this->name . '.json', $remote);
     return ($result->code == 200);
   }
+  
+  function create_remote() {
+    $workspace = variable_get('geoserver_workspace', '');
+    $remote = $this->to_remote();
+    $url = 'rest/workspaces/' . $workspace . '/datastores/' . $this->datastore . '/featuretypes';
+    $result = geoserver_post($url . '.json', $remote);
+    return ($result->code == 201);
+  }
+  
+  function delete_remote() {
+    $workspace = variable_get('geoserver_workspace', '');
+    $url = 'rest/workspaces/' . $workspace . '/datastores/' . $this->datastore . '/featuretypes';
+    $result = geoserver_delete($url . '/' . $this->name . '?recurse=true');
+    return ($result->code == 200);
+  }
 
   /**
    * @return
