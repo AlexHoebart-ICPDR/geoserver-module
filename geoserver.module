@@ -344,7 +344,7 @@ function geoserver_get($url, $uid = NULL) {
 }
 
 /**
- * Helper function to make a GET request.
+ * Helper function to make a DELETE request.
  *
  * @param String $url Path relative to GeoServer URL.
  */
@@ -480,8 +480,6 @@ function geoserver_get_layer_object($layer) {
   return FALSE;
 }
 
-
-
 /**
  * Menu loader for layer types.
  *
@@ -503,22 +501,6 @@ function geoserver_layer_type_load($name, $reset = FALSE) {
     $layer_type = new $layer_type_class();
     return $layer_type;
   }
-  return FALSE;
-}
-
-/**
- * Check if a given entity has geospatial attributes.
- */
-function geoserver_content_type_settings_access($entity) {
-
-  $fields = field_info_instances('node', $entity->type);
-
-  foreach ($fields as $field) {
-    if ($field['widget']['module'] === 'postgis') {
-      return TRUE;
-    }
-  }
-
   return FALSE;
 }
 
