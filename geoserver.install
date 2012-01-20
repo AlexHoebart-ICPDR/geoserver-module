@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * This file holds the functions for the installing
+ * and enabling of the geoserver module.
+ *
+ * @ingroup geoserver
+ */
+
+/**
+ * Implements hook_install().
+ */
+function geoserver_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function geoserver_uninstall() {
+  // Get module variables
+//  $variables = db_query("SELECT v.name FROM {variable} AS v WHERE v.name LIKE ':pattern'",
+//    array(':pattern' => db_like('geoserver_') . '%'))->fetchAll();
+//  // Remove variables
+//  foreach ($variables as $v) {
+//    variable_del($v);
+//  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function geoserver_schema() {
+  $schema = array();
+  // Layer table (ctools extras)
+  $schema['geoserver_layers'] = array(
+    'description' => 'Storage for user defined GeoServer layers.',
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Name',
+      'primary key' => 'name',
+      'identifier' => 'geoserver_layers',
+      'default hook' => 'geoserver_layers',
+      'api' => array(
+        'owner' => 'geoserver',
+        'api' => 'geoserver_layers',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Layer name.',
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Layer title.',
+      ),
+      'description' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Layer description.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Layer data serialized.',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('name'),
+    'indexes' => array(
+      'name' => array('name'),
+    ),
+  );
+  return $schema;
+}
