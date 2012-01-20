@@ -344,6 +344,42 @@ function geoserver_get($url, $uid = NULL) {
 }
 
 /**
+ * Helper function to make a GET request.
+ *
+ * @param String $url Path relative to GeoServer URL.
+ */
+function geoserver_delete($url) {
+
+  $url = variable_get('geoserver_url', '') . trim($url, '/');
+
+  $request = curl_init($url);
+
+  curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
+  curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'DELETE');
+
+  $result = new stdClass();
+  $result->url = $url;
+  $result->data = curl_exec($request);
+  $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  curl_close($request);
+  
+  if (substr($result->url, -4) == 'json' && $result->code == 200) {
+    $result->data = json_decode($result->data);
+  }
+
+  if ($result->code === 200) {
+    watchdog('geoserver', 'Requested %url.', array('%url' => $url));
+  }
+  else {
+    watchdog('geoserver', 'Requested %url with error %code: %message',
+      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
+  }
+
+  return $result;
+}
+
+/**
  * Get all layer types.
  *
  * @ingroup openlayers_api
