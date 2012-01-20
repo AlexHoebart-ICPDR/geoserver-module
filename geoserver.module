@@ -41,8 +41,11 @@ function geoserver_ctools_plugin_api($module, $api) {
  * Implements hook_ctools_plugin_directory().
  */
 function geoserver_ctools_plugin_directory($module, $plugin) {
-  if ($module == 'geoserver' && !empty($plugin)) {
-    return 'plugins/' . $plugin;
+  if ($module == 'openlayers' && $plugin == 'layer_types') {
+    return 'plugins/openlayers/layer_types';
+  }
+  elseif ($module == 'geoserver' && $plugin == 'layer_types') {
+    return 'plugins/geoserver/layer_types';
   }
 }
 
@@ -50,9 +53,7 @@ function geoserver_ctools_plugin_directory($module, $plugin) {
  * Implements hook_ctools_plugin_type().
  */
 function geoserver_ctools_plugin_type() {
-  return array(
-    'layer_types' => array()
-  );
+  return array('layer_types' => array());
 }
 
 /**
@@ -343,146 +344,130 @@ function geoserver_get($url, $uid = NULL) {
 }
 
 /**
- * Helper function to make a POST request.
+ * Get all layer types.
+ *
+ * @ingroup openlayers_api
+ *
+ * @param $reset
+ *   Boolean whether to reset cache or not.
+ * @return
+ *   Array of layer type info.
  */
-function geoserver_admin() {
-  $url = variable_get('geoserver_url', '');
-  return array('#markup' => '<iframe src="' . $url . '" width="100%" height="2000px" onload="jQuery(\'iframe\').contents().find(\'#header\').hide()"></iframe>');
+function geoserver_layer_types($reset = FALSE) {
+  ctools_include('plugins');
+  return ctools_get_plugins('geoserver', 'layer_types');
 }
 
 /**
- * Implements hook_menu().
+ *  ...
  */
-function geoserver_menu() {
-  $items = array();
-
-  $items['admin/config/system/geoserver'] = array(
-    'title' => 'GeoServer',
-    'description' => 'GeoServer settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_settings_form'),
-    'access arguments' => array('administer site configuration'),
-  );
-
-  $items['admin/geoserver'] = array(
-    'title' => 'GeoServer',
-    'description' => 'GeoServer administration.',
-    'page callback' => 'geoserver_admin',
-    'access arguments' => array('administer site configuration'),
-  );
-
-  $items['admin/structure/types/manage/%node_type/geoserver'] = array(
-    'title' => 'GeoServer',
-    'description' => 'Publish content type with GeoServer.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_content_type_settings', 4),
-    'access callback' => 'geoserver_content_type_settings_access',
-    'access arguments' => array(4),
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'geoserver.admin.inc',
-    'weight' => 1,
-  );
-
-  return $items;
+function geoserver_layers_load($reset = FALSE) {
+  
+  ctools_include('export');
+  
+  if ($reset) {
+    ctools_export_load_object_reset('geoserver_layers');
+  }
+  
+  $layers = ctools_export_load_object('geoserver_layers', 'all', array());
+  $layer_types = geoserver_layer_types();
+  
+  foreach ($layers as $index => $layer) {
+    $layer_object = geoserver_get_layer_object($layer);
+    if ($layer_object) {
+      $layers[$index] = $layer_object;
+    }
+    else {
+      unset($layers[$index]);
+    }
+  }
+  
+  return $layers;
 }
 
 /**
- *  Function to generate the form setting array
+ * Menu loader for layers. (%geoserver_layer)
+ * @ingroup geoserver_api
+ *
+ * @param $name
+ *   Layer name
+ * @return array
+ *   Layer export
  */
-function geoserver_settings_form() {
+function geoserver_layer_load($name, $reset = FALSE) {
   
-  $url        = variable_get('geoserver_url', '');
-  $namespace  = variable_get('geoserver_namespace', '');
-  $workspace  = variable_get('geoserver_workspace', '');
-  $datastore  = variable_get('geoserver_datastore', '');
-  $workspaces = array();
-  $datastores = array();
+  ctools_include('export');
   
-  if (!empty($url)) {
-    
-    $result = geoserver_get('rest/workspaces.json');
-    if ($result->code == 200) {
-      foreach ($result->data->workspaces->workspace as $ws) {
-        $workspaces[$ws->name] = $ws->name;
-      }
-    }
-    
-    if (!empty($workspace)) {
-      
-      $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
-      if ($result->code == 200) {
-        $namespace = $result->data->namespace->uri;
-      }
-      
-      $result = geoserver_get('rest/workspaces/' . $workspace . '/datastores.json');
-      if ($result->code == 200) {
-        foreach ($result->data->dataStores->dataStore as $ds) {
-          $datastores[$ds->name] = $ds->name;
-        }
-      }
-    }
+  if ($reset) ctools_export_load_object_reset('geoserver_layers');
+  $layers = ctools_export_load_object('geoserver_layers', 'names', array($name));
+  $layer_types = geoserver_layer_types();
+  
+  if (isset($layers[$name])) {
+    return geoserver_get_layer_object($layers[$name]);
   }
-
-  $form = array(
-    'geoserver_url' => array(
-      '#type' => 'textfield',
-      '#title' => t('URL'),
-      '#default_value' => $url,
-      '#description' => 'The URL where GeoServer is running. Needs to end with a slash.',
-    ),
-    'geoserver_workspace' => array(
-      '#type' => 'select',
-      '#title' => t('Workspace'),
-      '#options' => $workspaces,
-      '#default_value' => $workspace,
-      '#ajax' => array(
-        'callback' => 'geoserver_settings_form_workspace_changed',
-        'wrapper' => 'geoserver_namespace_datastore'
-      ),
-    ),
-    'geoserver_namespace' => array(
-      '#type' => 'textfield',
-      '#title' => t('Namespace URI'),
-      '#disabled' => TRUE,
-      '#default_value' => $namespace,
-      '#prefix' => '<div id="geoserver_namespace_datastore">',
-    ),
-    'geoserver_datastore' => array(
-      '#type' => 'select',
-      '#title' => t('Datastore'),
-      '#options' => $datastores,
-      '#default_value' => $datastore,
-      '#suffix' => '</div>',
-    ),
-  );
-  return system_settings_form($form);
+  else {
+    watchdog('geoserver', 'Layer %layer not found.', array('%layer' => $name), WATCHDOG_ERROR);
+    return FALSE;
+  }
 }
 
-function geoserver_settings_form_workspace_changed($form, $form_state) {
-  
-  $workspace  = $form['geoserver_workspace']['#value'];
-  $namespace  = '';
-  $datastores = array();
-  
-  if (!empty($workspace)) {
-      
-    $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
-    if ($result->code == 200) {
-      $namespace = $result->data->namespace->uri;
-    }
+/**
+ * Get layer object
+ *
+ * @ingroup openlayers_api
+ * @param $reset
+ *   Boolean whether to reset cache or not
+ * @return array
+ *   array of layer info
+ */
+function geoserver_get_layer_object($layer) {
+  // Static cache because this function will possibly be called in big loops
+  static $layer_types;
+  if (!isset($layer_types)) {
+    $layer_types = geoserver_layer_types();
+  }
 
-    $result = geoserver_get('rest/workspaces/' . $workspace . '/datastores.json');
-    if ($result->code == 200) {
-      foreach ($result->data->dataStores->dataStore as $ds) {
-        $datastores[$ds->name] = $ds->name;
-      }
+  $layer->title = t($layer->title);
+  $layer->description = t($layer->description);
+
+  if (is_array($layer->data) && isset($layer->data['layer_type']) && 
+          isset($layer_types[$layer->data['layer_type']])) {
+    $layer_class = ctools_plugin_get_class($layer_types[$layer->data['layer_type']], 'layer_type');
+    if ($layer_class) {
+      return new $layer_class($layer);
     }
   }
-  
-  $form['geoserver_namespace']['#value'] = $namespace;
-  $form['geoserver_datastore']['#options'] = $datastores;
-  
-  return array($form['geoserver_namespace'], $form['geoserver_datastore']);
+  watchdog('geoserver', 'Layer !layer_name is unavailable because its 
+    layer type or the module that provides its layer type is missing',
+    array('!layer_name' => $layer->title),
+    WATCHDOG_ERROR);
+  return FALSE;
+}
+
+
+
+/**
+ * Menu loader for layer types.
+ *
+ * @ingroup openlayers_api
+ *
+ * @param $name
+ *   String identifier of layer type.
+ * @param $reset
+ *   Boolean whether to reset cache or not.
+ * @return
+ *   An instantiated layer type object or FALSE if not found.
+ */
+function geoserver_layer_type_load($name, $reset = FALSE) {
+  ctools_include('plugins');
+//  ctools_plugin_
+  $layer_type_class = ctools_plugin_load_class('geoserver', 'layer_types', $name, 'layer_type');
+
+  if ($layer_type_class) {
+    $layer_type = new $layer_type_class();
+    return $layer_type;
+  }
+  return FALSE;
 }
 
 /**

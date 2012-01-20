@@ -6,15 +6,6 @@
  */
 
 /**
- * Implements hook_openlayers_layer_types().
- */
-function geoserver_openlayers_layer_types() {
-  ctools_include('plugins');
-  $layer_types = ctools_get_plugins('geoserver', 'layer_types');
-  return $layer_types;
-}
-
-/**
  * Implements hook_openlayers_layers().
  */
 function geoserver_openlayers_layers() {
