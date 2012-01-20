@@ -1,0 +1,6 @@
+name = GeoServer UI
+description = Provides a user interface to manage a GeoServer instance.
+core = 7.x
+dependencies[] = geoserver
+
+configure = admin/structure/geoserver
