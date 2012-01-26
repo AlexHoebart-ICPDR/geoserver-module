@@ -37,7 +37,7 @@ function geoserver_ui_layers_list() {
     }
 
     // Add description and links.
-    $row[] = $layer_types[$layer->data['layer_type']]['title'];
+    $row[] = $layer_types[$layer->data['type']]['title'];
     $row[] = $layer->description;
     
     switch ($layer->get_status()) {
@@ -130,16 +130,62 @@ function geoserver_ui_layers_form($form_state, $args) {
     '#description' => t('The description of your layer, which will appear in the administration interface.'),
   );
   
-  // @TODO: clarify use of data, and of layer_type in overriding it
   $form['layer']['data'] = array(
     '#tree' => TRUE,
+  );
+  
+  if (module_exists('openlayers')) {
+    $openlayers = isset($layer->data['openlayers']) ? $layer->data['openlayers'] : array();
+    $form['layer']['data']['openlayers'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('OpenLayers'),
+    );
+    $form['layer']['data']['openlayers']['wfs'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Provide an OpenLayers WFS layer.'),
+      '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '', 
+    );
+    $form['layer']['data']['openlayers']['gwc'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Provide a cached OpenLayers WMS layer.'),
+      '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '', 
+    );
+    $form['layer']['data']['openlayers']['gwc_srs'] = array(
+      '#type' => 'select',
+      '#title' => t('Projection'),
+      '#options' => array(
+        'EPSG:4326' => '4326',
+        'EPSG:900913' => '900913',
+      ),
+      '#default_value' => isset($openlayers['gwc_srs']) ? $openlayers['gwc_srs'] : '', 
+      '#states' => array(
+        'visible' => array(
+          ':input[name="data[openlayers][gwc]"]' => array(
+            'checked' => TRUE,
+          ),
+        ),
+      ),
+    );
+    $form['layer']['data']['openlayers']['wms'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Provide an untiled OpenLayers WMS layer.'),
+      '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '', 
+    );
+  }
+  
+  $form['layer']['data']['type'] = array(
+    '#type' => 'hidden',
+    '#value' => get_class($layer),
+  );
+
+  $form['layer']['data']['options'] = array(
     '#type' => 'fieldset',
     '#title' => t('Layer Specifics'),
     '#description' => t('The following settings are specific to the layer type.'),
   );
-
+  
   // Arrays merged in order so that options_form can override defaults
-  $form['layer']['data'] = $layer->options_form() + $form['layer']['data'];
+  $form['layer']['data']['options'] = $layer->options_form() + $form['layer']['data']['options'];
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -153,7 +199,7 @@ function geoserver_ui_layers_form($form_state, $args) {
  * Submit handler for layers.
  */
 function geoserver_ui_layers_form_submit(&$form, &$form_state) {
-  $layer = geoserver_layer_type_load($form_state['values']['data']['layer_type']);
+  $layer = geoserver_layer_type_load($form_state['values']['data']['type']);
   $layer->name = $form_state['values']['name'];
   $layer->title = $form_state['values']['title'];
   $layer->description = $form_state['values']['description'];
