@@ -26,7 +26,6 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
   });
   
   // Apply GeoServer SLD.
-  console.log(options.sld);
   var sld = new OpenLayers.Format.SLD().read(options.sld);
   if (sld.namedLayers[options.protocol.typeName]) {
     jQuery.each(sld.namedLayers[options.protocol.typeName].userStyles, function(index, style) {

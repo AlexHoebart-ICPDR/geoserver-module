@@ -234,14 +234,13 @@ function geoserver_ui_layers_update($form_state, $args) {
 function geoserver_ui_layers_update_submit($form, &$form_state) {
   
   $layer = $form_state['values']['layer'];
-  $result = $layer->update_remote();
-
-  // Check query results
-  if ($result) {
+  try {
+    $resource = $layer->to_resource();
+    $resource->update();
     drupal_set_message(t('%layer was updated.', array('%layer' => $layer->title)));
-  }
-  else {
-    drupal_set_message(t('Error when attempting to update %layer.', array('%layer' => $layer->title)), 'error');
+  } catch (geoserver_resource_exception $exc) {
+    drupal_set_message(t('Error when attempting to update %layer: %message', 
+        array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
 
   // Redirect
@@ -265,17 +264,19 @@ function geoserver_ui_layers_create($form_state, $args) {
 function geoserver_ui_layers_create_submit($form, &$form_state) {
   
   $layer = $form_state['values']['layer'];
-  $result = $layer->create_remote();
-
-  // Check query results
-  if ($result) {
+  
+  try {
+    
+    $resource = $layer->to_resource();
+    $result = $resource->create();
     drupal_set_message(t('%layer was created.', array('%layer' => $layer->title)));
-  }
-  else {
-    drupal_set_message(t('Error when attempting to create %layer.', array('%layer' => $layer->title)), 'error');
+
+  } catch (geoserver_resource_exception $exc) {
+    
+    drupal_set_message(t('Error when attempting to create %layer: %message', 
+        array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
 
-  // Redirect
   $form_state['redirect'] = 'admin/structure/geoserver/layers';
 }
 
@@ -287,7 +288,16 @@ function geoserver_ui_layers_delete($form_state, $args) {
   // Create create form
   $form = array(
     'layer' => array('#type' => 'value', '#value' => $layer),
-    'remote' => array('#type' => 'checkbox', '#title' => 'Also delete GeoServer layer.'),
+    'target' => array(
+      '#type' => 'select', 
+      '#title' => 'Layer configuration',
+      '#description' => 'Please select which layer configuration you want to delete.',
+      '#options' => array(
+        'all' => t('Drupal and GeoServer'),
+        'drupal' => t('Drupal'),
+        'geoserver' => t('GeoServer'),
+      ),
+    ),
   );
   $message = t('Are you sure you want to delete %layer?', array('%layer' => $layer->title));
   return confirm_form($form, $message, 'admin/structure/geoserver/layers');
@@ -299,21 +309,26 @@ function geoserver_ui_layers_delete($form_state, $args) {
 function geoserver_ui_layers_delete_submit($form, &$form_state) {
   
   $layer = $form_state['values']['layer'];
+  $target = $form_state['values']['target'];
   
-  $result = $form_state['values']['remote'] ? $layer->delete_remote() : TRUE;
-  if ($result) {
-    $result = db_delete('geoserver_layers')->condition('name', $layer->name)->execute();
-  }
-
-  // Check query results
-  if ($result) {
+  try {
+    if ($target == 'all' || $taget == 'geoserver') {
+      $resource = $layer->to_resource();
+      $resource->delete();
+    }
+    
+    if ($target == 'all' || $target == 'drupal') {
+      db_delete('geoserver_layers')->condition('name', $layer->name)->execute();
+    }
+    
     drupal_set_message(t('%layer was delete.', array('%layer' => $layer->title)));
+    
+  } catch (geoserver_resource_exception $exc) {
+    
+    drupal_set_message(t('Error when attempting to delete %layer: %message', 
+        array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
-  else {
-    drupal_set_message(t('Error when attempting to delete %layer.', array('%layer' => $layer->title)), 'error');
-  }
-
-  // Redirect
+  
   $form_state['redirect'] = 'admin/structure/geoserver/layers';
 }
 
