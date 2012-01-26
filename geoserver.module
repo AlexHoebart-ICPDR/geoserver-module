@@ -63,8 +63,7 @@ function geoserver_user_login(&$edit, $account) {
 
   $url    = parse_url(variable_get('geoserver_url', ''));
   $fields = 'username=' . urlencode($edit['values']['name']) .
-            '&password=' . urlencode($edit['values']['pass']) .
-            '&_spring_security_remember_me=on';
+            '&password=' . urlencode($edit['values']['pass']);
 
   $file   = _geoserver_get_cookiefile();
   file_put_contents($file, '');
@@ -74,9 +73,14 @@ function geoserver_user_login(&$edit, $account) {
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_exec($request);
+  curl_setopt($request, CURLOPT_HEADER, TRUE);
+  $header = curl_exec($request);
   curl_close($request);
 
+  preg_match('/Location:(.*?)\n/', $header, $matches);
+  $locationUrl = parse_url(array_pop($matches));
+  $locationPath = isset($locationUrl['query']) ? $locationUrl['query'] : '';
+  
   // Parse cookie file.
   $cookies = array();
   $lines = file($file);
@@ -90,10 +94,8 @@ function geoserver_user_login(&$edit, $account) {
     }
   }
 
-  if (isset($cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE']) &&
-      $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'] != '""') {
+  if (isset($cookies['JSESSIONID']) && strpos($locationPath, 'error=true') == FALSE) {
     setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
-    setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', $cookies['SPRING_SECURITY_REMEMBER_ME_COOKIE'], 0, $url['path'], $url['host']);
   }
   else {
     watchdog('geoserver', 'Could not authenticate %username at %url.',
@@ -107,10 +109,7 @@ function geoserver_user_login(&$edit, $account) {
 function geoserver_user_logout($account) {
 
   $url = parse_url(variable_get('geoserver_url', ''));
-
   setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
-  setcookie('SPRING_SECURITY_REMEMBER_ME_COOKIE', '', 1, $url['path'], $url['host']);
-
   unlink(_geoserver_get_cookiefile());
 }
 
@@ -231,6 +230,7 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
 
   $result = new stdClass();
+  $result->content = $content;
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
@@ -494,7 +494,6 @@ function geoserver_get_layer_object($layer) {
  */
 function geoserver_layer_type_load($name, $reset = FALSE) {
   ctools_include('plugins');
-//  ctools_plugin_
   $layer_type_class = ctools_plugin_load_class('geoserver', 'layer_types', $name, 'layer_type');
 
   if ($layer_type_class) {
