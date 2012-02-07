@@ -16,7 +16,7 @@ function geoserver_openlayers_layers() {
   $workspace = variable_get('geoserver_workspace', '');
 
   foreach ($gsLayers as $gsLayer) {
-    
+
     if (!isset($gsLayer->data['openlayers'])) {
       break; // Layer has no OpenLayers configuration.
     }
@@ -72,4 +72,3 @@ function geoserver_openlayers_layers() {
 
   return $olLayers;
 }
-

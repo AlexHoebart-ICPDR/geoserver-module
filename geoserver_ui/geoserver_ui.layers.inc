@@ -4,11 +4,11 @@
  * Menu callback for Layers.
  */
 function geoserver_ui_layers_list() {
-  
+
 
   $rows = array();
   $header = array(t('Title'), t('Type'), t('Description'), t('GeoServer'), t('Actions'));
-  
+
   $layers = geoserver_layers_load();
   $layer_types = geoserver_layer_types();
 
@@ -20,7 +20,7 @@ function geoserver_ui_layers_list() {
     // Check map type and create links accordingly.
     switch ($layer->export_type) {
       case (EXPORT_IN_DATABASE | EXPORT_IN_CODE):
-        $row[] = $layer->title .' <em><small>(' . t('Overridden') . ')</small></em>';
+        $row[] = $layer->title . ' <em><small>(' . t('Overridden') . ')</small></em>';
         $links[] = l(t('Edit'), "admin/structure/geoserver/layers/{$layer->name}/edit");
         $links[] = l(t('Revert'), "admin/structure/geoserver/layers/{$layer->name}/delete");
         break;
@@ -28,34 +28,34 @@ function geoserver_ui_layers_list() {
       case EXPORT_IN_DATABASE:
         $links[] = l(t('Edit'), "admin/structure/geoserver/layers/{$layer->name}/edit");
         $links[] = l(t('Delete'), "admin/structure/geoserver/layers/{$layer->name}/delete");
-      	$row[] = $layer->title .' <em><small>(' . t('Normal') . ')</small></em>';
+        $row[] = $layer->title . ' <em><small>(' . t('Normal') . ')</small></em>';
         break;
 
       case EXPORT_IN_CODE:
-        $row[] = $layer->title .' <em><small>(' . t('Default') . ')</small></em>';
+        $row[] = $layer->title . ' <em><small>(' . t('Default') . ')</small></em>';
         break;
     }
 
     // Add description and links.
     $row[] = $layer_types[$layer->data['type']]['title'];
     $row[] = $layer->description;
-    
+
     switch ($layer->get_status()) {
       case (geoserver_layer_type::STATUS_FOUND_SAME):
         $row[] = t('Normal');
         break;
-      
+
       case (geoserver_layer_type::STATUS_FOUND_DIFF):
         $row[] = t('Overridden');
         $links[] = l(t('Update'), "admin/structure/geoserver/layers/{$layer->name}/update");
         break;
-      
+
       case (geoserver_layer_type::STATUS_NOT_FOUND):
         $row[] = t('Unavailable');
         $links[] = l(t('Create'), "admin/structure/geoserver/layers/{$layer->name}/create");
         break;
     }
-    
+
     $row[] = implode(' | ', $links);
     $rows[] = $row;
   }
@@ -73,9 +73,9 @@ function geoserver_ui_layer_types($type) {
     '#type' => 'item',
     '#markup' => t('Select a layer type to create a new layer.')
   );
-  
+
   $layer_types = geoserver_layer_types();
-  
+
   foreach ($layer_types as $key => $plugin) {
     $class = ctools_plugin_get_class($plugin, 'layer_type');
     if ($class) {
@@ -94,10 +94,10 @@ function geoserver_ui_layer_types($type) {
  * Layer add/edit form.
  */
 function geoserver_ui_layers_form($form_state, $args) {
-  
+
   $form = array();
   $layer = $args['build_info']['args'][0];
-  
+
   $form['layer']['basics'] = array(
     '#tree' => TRUE,
     '#type' => 'fieldset',
@@ -129,11 +129,11 @@ function geoserver_ui_layers_form($form_state, $args) {
     '#default_value' => isset($layer->description) ? $layer->description : '',
     '#description' => t('The description of your layer, which will appear in the administration interface.'),
   );
-  
+
   $form['layer']['data'] = array(
     '#tree' => TRUE,
   );
-  
+
   if (module_exists('openlayers')) {
     $openlayers = isset($layer->data['openlayers']) ? $layer->data['openlayers'] : array();
     $form['layer']['data']['openlayers'] = array(
@@ -143,12 +143,12 @@ function geoserver_ui_layers_form($form_state, $args) {
     $form['layer']['data']['openlayers']['wfs'] = array(
       '#type' => 'checkbox',
       '#title' => t('Provide an OpenLayers WFS layer.'),
-      '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '', 
+      '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '',
     );
     $form['layer']['data']['openlayers']['gwc'] = array(
       '#type' => 'checkbox',
       '#title' => t('Provide a cached OpenLayers WMS layer.'),
-      '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '', 
+      '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '',
     );
     $form['layer']['data']['openlayers']['gwc_srs'] = array(
       '#type' => 'select',
@@ -157,7 +157,7 @@ function geoserver_ui_layers_form($form_state, $args) {
         'EPSG:4326' => '4326',
         'EPSG:900913' => '900913',
       ),
-      '#default_value' => isset($openlayers['gwc_srs']) ? $openlayers['gwc_srs'] : '', 
+      '#default_value' => isset($openlayers['gwc_srs']) ? $openlayers['gwc_srs'] : '',
       '#states' => array(
         'visible' => array(
           ':input[name="data[openlayers][gwc]"]' => array(
@@ -169,10 +169,10 @@ function geoserver_ui_layers_form($form_state, $args) {
     $form['layer']['data']['openlayers']['wms'] = array(
       '#type' => 'checkbox',
       '#title' => t('Provide an untiled OpenLayers WMS layer.'),
-      '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '', 
+      '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '',
     );
   }
-  
+
   $form['layer']['data']['type'] = array(
     '#type' => 'hidden',
     '#value' => get_class($layer),
@@ -183,7 +183,7 @@ function geoserver_ui_layers_form($form_state, $args) {
     '#title' => t('Layer Specifics'),
     '#description' => t('The following settings are specific to the layer type.'),
   );
-  
+
   // Arrays merged in order so that options_form can override defaults
   $form['layer']['data']['options'] = $layer->options_form() + $form['layer']['data']['options'];
 
@@ -218,10 +218,10 @@ function geoserver_ui_layers_form_submit(&$form, &$form_state) {
 }
 
 function geoserver_ui_layers_update($form_state, $args) {
-  
+
   $form = array();
   $layer = $args['build_info']['args'][0];
-  
+
   // Create update form
   $form = array('layer' => array('#type' => 'value', '#value' => $layer));
   $message = t('Are you sure you want to update %layer?', array('%layer' => $layer->title));
@@ -232,14 +232,14 @@ function geoserver_ui_layers_update($form_state, $args) {
  * Submit callback for layer update form.
  */
 function geoserver_ui_layers_update_submit($form, &$form_state) {
-  
+
   $layer = $form_state['values']['layer'];
   try {
     $resource = $layer->to_resource();
     $resource->update();
     drupal_set_message(t('%layer was updated.', array('%layer' => $layer->title)));
   } catch (geoserver_resource_exception $exc) {
-    drupal_set_message(t('Error when attempting to update %layer: %message', 
+    drupal_set_message(t('Error when attempting to update %layer: %message',
         array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
 
@@ -248,10 +248,10 @@ function geoserver_ui_layers_update_submit($form, &$form_state) {
 }
 
 function geoserver_ui_layers_create($form_state, $args) {
-  
+
   $form = array();
   $layer = $args['build_info']['args'][0];
-  
+
   // Create create form
   $form = array('layer' => array('#type' => 'value', '#value' => $layer));
   $message = t('Are you sure you want to create %layer?', array('%layer' => $layer->title));
@@ -262,18 +262,18 @@ function geoserver_ui_layers_create($form_state, $args) {
  * Submit callback for layer create form.
  */
 function geoserver_ui_layers_create_submit($form, &$form_state) {
-  
+
   $layer = $form_state['values']['layer'];
-  
+
   try {
-    
+
     $resource = $layer->to_resource();
     $result = $resource->create();
     drupal_set_message(t('%layer was created.', array('%layer' => $layer->title)));
 
   } catch (geoserver_resource_exception $exc) {
-    
-    drupal_set_message(t('Error when attempting to create %layer: %message', 
+
+    drupal_set_message(t('Error when attempting to create %layer: %message',
         array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
 
@@ -281,15 +281,15 @@ function geoserver_ui_layers_create_submit($form, &$form_state) {
 }
 
 function geoserver_ui_layers_delete($form_state, $args) {
-  
+
   $form = array();
   $layer = $args['build_info']['args'][0];
-  
+
   // Create create form
   $form = array(
     'layer' => array('#type' => 'value', '#value' => $layer),
     'target' => array(
-      '#type' => 'select', 
+      '#type' => 'select',
       '#title' => 'Layer configuration',
       '#description' => 'Please select which layer configuration you want to delete.',
       '#options' => array(
@@ -307,28 +307,28 @@ function geoserver_ui_layers_delete($form_state, $args) {
  * Submit callback for layer create form.
  */
 function geoserver_ui_layers_delete_submit($form, &$form_state) {
-  
+
   $layer = $form_state['values']['layer'];
   $target = $form_state['values']['target'];
-  
+
   try {
     if ($target == 'all' || $taget == 'geoserver') {
       $resource = $layer->to_resource();
       $resource->delete();
     }
-    
+
     if ($target == 'all' || $target == 'drupal') {
       db_delete('geoserver_layers')->condition('name', $layer->name)->execute();
     }
-    
+
     drupal_set_message(t('%layer was delete.', array('%layer' => $layer->title)));
-    
+
   } catch (geoserver_resource_exception $exc) {
-    
-    drupal_set_message(t('Error when attempting to delete %layer: %message', 
+
+    drupal_set_message(t('Error when attempting to delete %layer: %message',
         array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
-  
+
   $form_state['redirect'] = 'admin/structure/geoserver/layers';
 }
 

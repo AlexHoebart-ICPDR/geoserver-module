@@ -101,7 +101,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
    * Render.
    */
   function render(&$map) {
-    drupal_add_js(drupal_get_path('module', 'geoserver') . 
+    drupal_add_js(drupal_get_path('module', 'geoserver') .
       '/plugins/openlayers/layer_types/openlayers_layer_type_geoserver_wfs.js');
     return $this->options;
   }

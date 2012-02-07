@@ -10,7 +10,7 @@ module_load_include('inc', 'geoserver', '/geoserver.layer');
 
 /**
  * Implements hook_cron().
- * 
+ *
  * Access web interface of GeoServer every hour with every active user to keep sessions alive.
  */
 function geoserver_cron() {
@@ -80,7 +80,7 @@ function geoserver_user_login(&$edit, $account) {
   preg_match('/Location:(.*?)\n/', $header, $matches);
   $locationUrl = parse_url(array_pop($matches));
   $locationPath = isset($locationUrl['query']) ? $locationUrl['query'] : '';
-  
+
   // Parse cookie file.
   $cookies = array();
   $lines = file($file);
@@ -255,7 +255,7 @@ function geoserver_post($url, $content) {
 function geoserver_put($url, $content) {
 
   $url = variable_get('geoserver_url', '') . trim($url, '/');
-  
+
   if (substr($url, -3) == 'xml') {
     $headers = array(
       'Content-Length: ' . drupal_strlen($content),
@@ -276,7 +276,7 @@ function geoserver_put($url, $content) {
   else {
     throw new Exception('Unsupported format.');
   }
-  
+
   // Create temporary file from payload.
   $file = tmpfile();
   fwrite($file, $content);
@@ -327,7 +327,7 @@ function geoserver_get($url, $uid = NULL) {
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
-  
+
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
     $result->data = json_decode($result->data);
   }
@@ -363,7 +363,7 @@ function geoserver_delete($url) {
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
-  
+
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
     $result->data = json_decode($result->data);
   }
@@ -398,16 +398,16 @@ function geoserver_layer_types($reset = FALSE) {
  *  ...
  */
 function geoserver_layers_load($reset = FALSE) {
-  
+
   ctools_include('export');
-  
+
   if ($reset) {
     ctools_export_load_object_reset('geoserver_layers');
   }
-  
+
   $layers = ctools_export_load_object('geoserver_layers', 'all', array());
   $layer_types = geoserver_layer_types();
-  
+
   foreach ($layers as $index => $layer) {
     $layer_object = geoserver_get_layer_object($layer);
     if ($layer_object) {
@@ -417,7 +417,7 @@ function geoserver_layers_load($reset = FALSE) {
       unset($layers[$index]);
     }
   }
-  
+
   return $layers;
 }
 
@@ -431,13 +431,13 @@ function geoserver_layers_load($reset = FALSE) {
  *   Layer export
  */
 function geoserver_layer_load($name, $reset = FALSE) {
-  
+
   ctools_include('export');
-  
+
   if ($reset) ctools_export_load_object_reset('geoserver_layers');
   $layers = ctools_export_load_object('geoserver_layers', 'names', array($name));
   $layer_types = geoserver_layer_types();
-  
+
   if (isset($layers[$name])) {
     return geoserver_get_layer_object($layers[$name]);
   }
@@ -472,7 +472,7 @@ function geoserver_get_layer_object($layer) {
       return new $layer_class($layer);
     }
   }
-  watchdog('geoserver', 'Layer !layer_name is unavailable because its 
+  watchdog('geoserver', 'Layer !layer_name is unavailable because its
     layer type or the module that provides its layer type is missing',
     array('!layer_name' => $layer->title),
     WATCHDOG_ERROR);
@@ -518,12 +518,12 @@ function _geoserver_get_cookiefile($uid = NULL) {
 class geoserver_resource_exception extends Exception {};
 
 abstract class geoserver_resource {
-  
+
   function __construct($local_layer) {
     $this->workspace = variable_get('geoserver_workspace', '');
     $this->local_layer = $local_layer;
   }
-  
+
   abstract function create();
   abstract function update();
   abstract function delete();
@@ -535,31 +535,31 @@ abstract class geoserver_resource {
  * All other parent classes can be autoloaded through ctools.
  */
 abstract class geoserver_layer_type {
-  
+
   const STATUS_FOUND_SAME = 1;
   const STATUS_FOUND_DIFF = 2;
   const STATUS_NOT_FOUND  = 3;
-  
+
   public $name;
 
   function __construct($layer = array()) {
-    
+
     $this->workspace = variable_get('geoserver_workspace', '');
-    
+
     foreach (array('name', 'title', 'description', 'data', 'export_type') as $k) {
       if (isset($layer->{$k})) {
         $this->{$k} = $layer->{$k};
       }
     }
   }
-  
+
   abstract function to_resource();
   abstract function from_resource();
 
   function options_form($defaults = array()) {
     return array();
   }
-  
+
   function get_status() {
     $resource = clone $this;
     $resource->from_resource();
@@ -574,7 +574,7 @@ abstract class geoserver_layer_type {
       else {
         return geoserver_layer_type::STATUS_FOUND_SAME;
       }
-    } 
+    }
     else {
       return geoserver_layer_type::STATUS_NOT_FOUND;
     }
@@ -612,47 +612,47 @@ abstract class geoserver_layer_type {
 }
 
 class geoserver_resource_feature_type extends geoserver_resource {
-  
+
   public $feature_type;
   public $layer;
   public $sld;
-  
+
   public function create() {
-    
+
     $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes';
     $result = geoserver_post($url . '.json', $this->feature_type);
     if ($result->code != 201) {
       throw new geoserver_resource_exception("Could not create featuretype: $result->data");
     }
 
-    $result = geoserver_put('rest/layers/' . $this->name .'.json', $this->layer);
+    $result = geoserver_put('rest/layers/' . $this->name . '.json', $this->layer);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update layer: $result->data");
     }
-    
+
     // TODO: remove
     geoserver_put('rest/styles/' . $this->name . '.sld', $this->sld);
   }
-  
+
   public function update() {
-    
+
     $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes';
     $result = geoserver_put($url . '/' . $this->name . '.json', $this->feature_type);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update featuretypes: $result->data");
     }
-    
-    $result = geoserver_put('rest/layers/' . $this->name .'.json', $this->layer);
+
+    $result = geoserver_put('rest/layers/' . $this->name . '.json', $this->layer);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update layer: $result->data");
     }
-    
+
     $result = geoserver_put('rest/styles/' . $this->name . '.sld', $this->sld);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update style: $result->data");
     }
   }
-  
+
   public function delete() {
     $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes';
     $result = geoserver_delete($url . '/' . $this->local_layer->name . '?recurse=true');
@@ -660,15 +660,15 @@ class geoserver_resource_feature_type extends geoserver_resource {
       throw new geoserver_resource_exception("Could not delete featuretype: $result->data");
     }
   }
-  
+
   public function read() {
-    
+
     $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes/';
-    $result = geoserver_get($url . $this->local_layer->name .'.json');
+    $result = geoserver_get($url . $this->local_layer->name . '.json');
     if ($result->code == 200) {
       $this->feature_type = $result->data;
-      $this->layer = null;
-      $result = geoserver_get('rest/styles/' . $this->local_layer->name .'.sld');
+      $this->layer = NULL;
+      $result = geoserver_get('rest/styles/' . $this->local_layer->name . '.sld');
       if ($result->code == 200) {
         $this->sld = $result->data;
       }
@@ -683,10 +683,10 @@ class geoserver_resource_feature_type extends geoserver_resource {
  * Vector based layer.
  */
 abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
-  
+
   abstract function to_feature_type();
   abstract function from_feature_type($feature_type);
-    
+
   function to_layer() {
     return array(
       'layer' => array(
@@ -706,7 +706,7 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
   function from_layer($layer) {
     // Nothing to do here...
   }
-  
+
   function to_resource() {
     $remote_layer = new geoserver_resource_feature_type($this);
     $remote_layer->feature_type = $this->to_feature_type();
@@ -715,7 +715,7 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
     $remote_layer->sld = $this->data['options']['sld'];
     return $remote_layer;
   }
-  
+
   function from_resource() {
     $remote_layer = new geoserver_resource_feature_type($this);
     $remote_layer->read();
@@ -723,7 +723,7 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
     $this->from_layer($remote_layer->layer);
     $this->data['options']['sld'] = $remote_layer->sld;
   }
-  
+
 
 }
 
@@ -731,23 +731,23 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
  * Raster based layer.
  */
 abstract class geoserver_layer_type_coverage extends geoserver_layer_type {
-  
+
   abstract function to_coverage();
   abstract function from_coverage($coverage);
-  
+
   public function create_remote() {
-    
+
   }
-  
+
   public function update_remote() {
-    
+
   }
-  
+
   public function delete_remote() {
-    
+
   }
-  
+
   public function read_remote() {
-    
+
   }
 }
