@@ -18,7 +18,7 @@ function geoserver_ui_admin_settings() {
   $namespace  = variable_get('geoserver_namespace', '');
   $workspace  = variable_get('geoserver_workspace', '');
   $workspaces = array();
-  
+
   if (!empty($url)) {
     $result = geoserver_get('rest/workspaces.json');
     if ($result->code == 200) {
@@ -26,7 +26,7 @@ function geoserver_ui_admin_settings() {
         $workspaces[$ws->name] = $ws->name;
       }
     }
-    
+
     if (!empty($workspace)) {
       $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
       if ($result->code == 200) {
@@ -66,26 +66,26 @@ function geoserver_ui_admin_settings() {
 
 /**
  * AJAX callback; loads namespace URI for a given workspace.
- * 
+ *
  * @param array $form
  * @param array $form_state
  * @return array Namespace form field.
  */
 function geoserver_ui_admin_settings_form_namespace($form, $form_state) {
-  
+
   $workspace  = $form['geoserver_workspace']['#value'];
   $namespace  = '';
-  
+
   if (!empty($workspace)) {
-      
+
     $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
     if ($result->code == 200) {
       $namespace = $result->data->namespace->uri;
     }
   }
-  
+
   $form['geoserver_namespace']['#value'] = $namespace;
-  
+
   return array($form['geoserver_namespace']);
 }
 
