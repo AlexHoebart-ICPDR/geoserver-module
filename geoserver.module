@@ -565,8 +565,8 @@ abstract class geoserver_layer_type {
     $resource->from_resource();
     $layer = $this->to_record();
     // Remove whitespace, because SLD fetched over REST API will be without whitespace.
-    $layer['data']['options']['sld'] = preg_replace('~>\s+<~', '><', $layer['data']['options']['sld']);
     $remote = $resource->to_record();
+    $layer['data']['options']['sld'] = $remote['data']['options']['sld'];
     if (!empty($resource->name)) {
       if ($layer != $resource->to_record()) {
         return geoserver_layer_type::STATUS_FOUND_DIFF;
@@ -629,9 +629,6 @@ class geoserver_resource_feature_type extends geoserver_resource {
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update layer: $result->data");
     }
-    
-    // TODO: remove
-    geoserver_put('rest/styles/' . $this->name . '.sld', $this->sld);
   }
   
   public function update() {
@@ -645,11 +642,6 @@ class geoserver_resource_feature_type extends geoserver_resource {
     $result = geoserver_put('rest/layers/' . $this->name .'.json', $this->layer);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update layer: $result->data");
-    }
-    
-    $result = geoserver_put('rest/styles/' . $this->name . '.sld', $this->sld);
-    if ($result->code != 200) {
-      throw new geoserver_resource_exception("Could not update style: $result->data");
     }
   }
   
