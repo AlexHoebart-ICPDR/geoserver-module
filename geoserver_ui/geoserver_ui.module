@@ -6,6 +6,7 @@
  *
  * @ingroup geoserver
  */
+
 /**
  * Implements hook_menu().
  */
@@ -28,7 +29,7 @@ function geoserver_ui_menu() {
     'page arguments' => array('geoserver_ui_admin_settings'),
     'access arguments' => array('administer geoserver'),
     'file' => 'geoserver_ui.admin.inc',
-    'type' => MENU_NORMAL_ITEM
+    'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/structure/geoserver/settings'] = array(
     'title' => 'Settings',
@@ -51,7 +52,7 @@ function geoserver_ui_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -20,
   );
-  // Layer type drilldown
+  // Layer type drilldown.
   $items['admin/structure/geoserver/layers/add'] = array(
     'title' => 'Add',
     'page callback' => 'drupal_get_form',
@@ -61,7 +62,7 @@ function geoserver_ui_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
   );
-  // Actual add-layer form
+  // Actual add-layer form.
   $items['admin/structure/geoserver/layers/add/%geoserver_layer_type'] = array(
     'title' => 'Add',
     'page callback' => 'drupal_get_form',
@@ -71,7 +72,7 @@ function geoserver_ui_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -15,
   );
-  // Edit-layer form
+  // Edit-layer form.
   $items['admin/structure/geoserver/layers/%geoserver_layer/edit'] = array(
     'title' => 'Edit layer',
     'description' => 'Edit geoserver layer.',
@@ -109,7 +110,7 @@ function geoserver_ui_menu() {
     'file' => 'geoserver_ui.layers.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-  // Layer-type-wide settings form
+  // Layer-type-wide settings form.
   $items['admin/structure/geoserver/layers/settings'] = array(
     'title' => 'Settings',
     'page callback' => 'drupal_get_form',

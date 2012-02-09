@@ -10,25 +10,26 @@
  */
 function geoserver_openlayers_layers() {
 
-  $olLayers = array();
-  $gsLayers = geoserver_layers_load();
+  $ol_layers = array();
+  $gs_layers = geoserver_layers_load();
   $url = variable_get('geoserver_url', '');
   $workspace = variable_get('geoserver_workspace', '');
 
-  foreach ($gsLayers as $gsLayer) {
+  foreach ($gs_layers as $gs_layer) {
 
-    if (!isset($gsLayer->data['openlayers'])) {
-      break; // Layer has no OpenLayers configuration.
+    if (!isset($gs_layer->data['openlayers'])) {
+      // Layer has no OpenLayers configuration.
+      break;
     }
 
-    if ($gsLayer->data['openlayers']['gwc']) {
-      $olLayer = new stdClass();
-      $olLayer->api_version = 1;
-      $olLayer->name = $gsLayer->name . '_gwc';
-      $olLayer->title = $gsLayer->title;
-      $olLayer->description = t('Cached WMS layer of GeoServer layer %name',
-          array('%name' => $gsLayer->name));
-      $olLayer->data = array(
+    if ($gs_layer->data['openlayers']['gwc']) {
+      $ol_layer = new stdClass();
+      $ol_layer->api_version = 1;
+      $ol_layer->name = $gs_layer->name . '_gwc';
+      $ol_layer->title = $gs_layer->title;
+      $ol_layer->description = t('Cached WMS layer of GeoServer layer %name',
+          array('%name' => $gs_layer->name));
+      $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'gwc/service/wms',
         'params' => array(
@@ -38,37 +39,37 @@ function geoserver_openlayers_layers() {
           'singleTile' => 0,
         ),
         'options' => array(
-          'srs' => $gsLayer->data['openlayers']['gwc_srs'],
+          'srs' => $gs_layer->data['openlayers']['gwc_srs'],
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',
-          'layers' => $workspace . ':' . $gsLayer->name,
+          'layers' => $workspace . ':' . $gs_layer->name,
           'styles' => '',
         ),
       );
-      $olLayers[$olLayer->name] = $olLayer;
+      $ol_layers[$ol_layer->name] = $ol_layer;
     }
 
-    if ($gsLayer->data['openlayers']['wfs']) {
-      $olLayer = new stdClass();
-      $olLayer->api_version = 1;
-      $olLayer->name = $gsLayer->name . '_wfs';
-      $olLayer->title = $gsLayer->title;
-      $olLayer->description = t('WFS layer of GeoServer layer %name',
-          array('%name' => $gsLayer->name));
-      $olLayer->data = array(
+    if ($gs_layer->data['openlayers']['wfs']) {
+      $ol_layer = new stdClass();
+      $ol_layer->api_version = 1;
+      $ol_layer->name = $gs_layer->name . '_wfs';
+      $ol_layer->title = $gs_layer->title;
+      $ol_layer->description = t('WFS layer of GeoServer layer %name',
+          array('%name' => $gs_layer->name));
+      $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_geoserver_wfs',
-        'sld' => $gsLayer->data['options']['sld'],
+        'sld' => $gs_layer->data['options']['sld'],
         'protocol' => array(
           'url' => $url . 'wfs',
-          'typeName' => $gsLayer->name,
-          'geometryName' => $gsLayer->data['options']['geometry_name'],
+          'typeName' => $gs_layer->name,
+          'geometryName' => $gs_layer->data['options']['geometry_name'],
           'featureNS' => variable_get('geoserver_namespace', ''),
         ),
       );
-      $olLayers[$olLayer->name] = $olLayer;
+      $ol_layers[$ol_layer->name] = $ol_layer;
     }
   }
 
-  return $olLayers;
+  return $ol_layers;
 }

@@ -1,10 +1,17 @@
 <?php
 
 /**
- * Menu callback for Layers.
+ * @file
+ * Handle GeoServer layers.
+ *
+ * @ingroup geoserver
+ */
+
+
+/**
+ * Menu callback to list all available layers.
  */
 function geoserver_ui_layers_list() {
-
 
   $rows = array();
   $header = array(t('Title'), t('Type'), t('Description'), t('GeoServer'), t('Actions'));
@@ -12,7 +19,7 @@ function geoserver_ui_layers_list() {
   $layers = geoserver_layers_load();
   $layer_types = geoserver_layer_types();
 
-  // Create table rows
+  // Create table rows.
   foreach ($layers as $layer) {
     $row = array();
     $links = array();
@@ -60,7 +67,7 @@ function geoserver_ui_layers_list() {
     $rows[] = $row;
   }
 
-  // Output themed table
+  // Output themed table.
   return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
@@ -71,7 +78,7 @@ function geoserver_ui_layer_types($type) {
   $form = array();
   $form['layer_type_help'] = array(
     '#type' => 'item',
-    '#markup' => t('Select a layer type to create a new layer.')
+    '#markup' => t('Select a layer type to create a new layer.'),
   );
 
   $layer_types = geoserver_layer_types();
@@ -118,7 +125,7 @@ function geoserver_ui_layers_form($form_state, $args) {
     '#maxlength' => 32,
     '#machine_name' => array(
       'exists' => 'geoserver_layer_load',
-      'source' => array('layer', 'basics', 'title')
+      'source' => array('layer', 'basics', 'title'),
     ),
     '#default_value' => isset($layer->name) ? $layer->name : '',
     '#description' => t('This is the unique name of the layer. It must contain only alphanumeric characters and underscores.'),
@@ -184,7 +191,7 @@ function geoserver_ui_layers_form($form_state, $args) {
     '#description' => t('The following settings are specific to the layer type.'),
   );
 
-  // Arrays merged in order so that options_form can override defaults
+  // Arrays merged in order so that options_form can override defaults.
   $form['layer']['data']['options'] = $layer->options_form() + $form['layer']['data']['options'];
 
   $form['submit'] = array(
@@ -207,7 +214,7 @@ function geoserver_ui_layers_form_submit(&$form, &$form_state) {
 
   $success = $layer->save();
 
-  // Redirect to edit page
+  // Redirect to edit page.
   if ($success) {
     drupal_set_message(t('Layer saved.'));
     $form_state['redirect'] = 'admin/structure/geoserver/layers/' . $layer->name . '/edit';
@@ -217,12 +224,15 @@ function geoserver_ui_layers_form_submit(&$form, &$form_state) {
   }
 }
 
+/**
+ * Layer update form.
+ */
 function geoserver_ui_layers_update($form_state, $args) {
 
   $form = array();
   $layer = $args['build_info']['args'][0];
 
-  // Create update form
+  // Create update form.
   $form = array('layer' => array('#type' => 'value', '#value' => $layer));
   $message = t('Are you sure you want to update %layer?', array('%layer' => $layer->title));
   return confirm_form($form, $message, 'admin/structure/geoserver/layers');
@@ -243,16 +253,19 @@ function geoserver_ui_layers_update_submit($form, &$form_state) {
         array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
   }
 
-  // Redirect
+  // Redirect.
   $form_state['redirect'] = 'admin/structure/geoserver/layers';
 }
 
+/**
+ * Layer create form.
+ */
 function geoserver_ui_layers_create($form_state, $args) {
 
   $form = array();
   $layer = $args['build_info']['args'][0];
 
-  // Create create form
+  // Create create form.
   $form = array('layer' => array('#type' => 'value', '#value' => $layer));
   $message = t('Are you sure you want to create %layer?', array('%layer' => $layer->title));
   return confirm_form($form, $message, 'admin/structure/geoserver/layers');
@@ -280,12 +293,15 @@ function geoserver_ui_layers_create_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/structure/geoserver/layers';
 }
 
+/**
+ * Confirm form to delete a layer.
+ */
 function geoserver_ui_layers_delete($form_state, $args) {
 
   $form = array();
   $layer = $args['build_info']['args'][0];
 
-  // Create create form
+  // Create create form.
   $form = array(
     'layer' => array('#type' => 'value', '#value' => $layer),
     'target' => array(
@@ -333,7 +349,7 @@ function geoserver_ui_layers_delete_submit($form, &$form_state) {
 }
 
 /**
- * Layer-wide-settings form
+ * Layer type settings form.
  */
 function geoserver_ui_layers_settings($form_state, $layer = NULL) {
   $form = array();
@@ -346,7 +362,8 @@ function geoserver_ui_layers_settings($form_state, $layer = NULL) {
       $form[$name] = array(
         '#type' => 'fieldset',
         '#tree' => TRUE,
-        '#title' => $type_def['title']);
+        '#title' => $type_def['title'],
+      );
       $form[$name]['settings'] = $type->settings_form();
     }
   }
@@ -358,6 +375,9 @@ function geoserver_ui_layers_settings($form_state, $layer = NULL) {
   return $form;
 }
 
+/**
+ * Form submit callback for layer type settings form.
+ */
 function geoserver_ui_layers_settings_submit(&$form, &$form_state) {
   $layer_types = geoserver_layer_types();
   foreach ($form_state['values'] as $key => $value) {

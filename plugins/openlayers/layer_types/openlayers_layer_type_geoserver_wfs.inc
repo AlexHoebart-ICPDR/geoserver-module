@@ -93,7 +93,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
       'layer_type' => array(
         '#type' => 'hidden',
         '#value' => 'openlayers_layer_type_geoserver_wfs'
-      )
+      ),
     );
   }
 
