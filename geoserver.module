@@ -535,6 +535,43 @@ function geoserver_parse_cookiefile($file) {
   return $cookies;
 }
 
+function geoserver_styles_load($reset = false) {
+  ctools_include('export');
+
+  if ($reset) {
+    ctools_export_load_object_reset('geoserver_styles');
+  }
+
+  return ctools_export_load_object('geoserver_styles', 'all', array());
+}
+
+/**
+ * Menu loader for layers. (%geoserver_layer)
+ * @ingroup geoserver_api
+ *
+ * @param $name
+ *   Layer name
+ * @return array
+ *   Layer export
+ */
+function geoserver_style_load($name, $reset = FALSE) {
+
+  ctools_include('export');
+
+  if ($reset) {
+    ctools_export_load_object_reset('geoserver_layers');
+  }
+  $layers = ctools_export_load_object('geoserver_layers', 'names', array($name));
+
+  if (isset($layers[$name])) {
+    return $layers[$name];
+  }
+  else {
+    watchdog('geoserver', 'Layer %layer not found.', array('%layer' => $name), WATCHDOG_ERROR);
+    return FALSE;
+  }
+}
+
 class geoserver_resource_exception extends Exception {};
 
 abstract class geoserver_resource {

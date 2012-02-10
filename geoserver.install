@@ -32,6 +32,7 @@ function geoserver_uninstall() {
  */
 function geoserver_schema() {
   $schema = array();
+
   // Layer table (ctools extras).
   $schema['geoserver_layers'] = array(
     'description' => 'Storage for user defined GeoServer layers.',
@@ -72,6 +73,55 @@ function geoserver_schema() {
         'type' => 'text',
         'not null' => FALSE,
         'description' => 'Layer data serialized.',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('name'),
+    'indexes' => array(
+      'name' => array('name'),
+    ),
+  );
+
+  // Style table (ctools extras).
+  $schema['geoserver_styles'] = array(
+    'description' => 'Storage for user defined GeoServer styles.',
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Name',
+      'primary key' => 'name',
+      'identifier' => 'geoserver_styles',
+      'default hook' => 'geoserver_styles',
+      'api' => array(
+        'owner' => 'geoserver',
+        'api' => 'geoserver_styles',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Style name.',
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Style title.',
+      ),
+      'description' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Style description.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Style SLD.',
         'serialize' => TRUE,
       ),
     ),
