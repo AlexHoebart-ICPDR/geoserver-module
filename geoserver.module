@@ -68,7 +68,8 @@ function geoserver_user_login(&$edit, $account) {
     return;
   }
 
-  $url    = parse_url(variable_get('geoserver_url', ''));
+  $url = parse_url($url);
+  $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   $fields = 'username=' . urlencode($edit['values']['name']) .
             '&password=' . urlencode($edit['values']['pass']);
 
@@ -116,6 +117,7 @@ function geoserver_user_login(&$edit, $account) {
 function geoserver_user_logout($account) {
 
   $url = parse_url(variable_get('geoserver_url', ''));
+  $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
   unlink(_geoserver_get_cookiefile());
 }
