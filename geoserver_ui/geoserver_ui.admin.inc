@@ -17,7 +17,7 @@ function geoserver_ui_admin_settings() {
   $url        = variable_get('geoserver_url', '');
   $namespace  = variable_get('geoserver_namespace', '');
   $workspace  = variable_get('geoserver_workspace', '');
-  $workspaces = array();
+  $workspaces = array('');
 
   if (!empty($url)) {
     $result = geoserver_get('rest/workspaces.json');
