@@ -73,7 +73,7 @@ function geoserver_user_login(&$edit, $account) {
   $fields = 'username=' . urlencode($edit['values']['name']) .
             '&password=' . urlencode($edit['values']['pass']);
 
-  $file   = _geoserver_get_cookiefile();
+  $file   = geoserver_get_cookiefile();
   file_put_contents($file, '');
 
   $request = curl_init('http://' . $url['host'] . $url['path'] . 'j_spring_security_check');
@@ -88,19 +88,7 @@ function geoserver_user_login(&$edit, $account) {
   preg_match('/Location:(.*?)\n/', $header, $matches);
   $location_url = parse_url(array_pop($matches));
   $location_path = isset($location_url['query']) ? $location_url['query'] : '';
-
-  // Parse cookie file.
-  $cookies = array();
-  $lines = file($file);
-  foreach ($lines as $line) {
-    if ('#' === $line{0}) {
-      continue;
-    }
-    $columns = explode("\t", $line);
-    if (isset($columns[5]) && isset($columns[6])) {
-      $cookies[$columns[5]] = drupal_substr($columns[6], 0, -1);
-    }
-  }
+  $cookies = geoserver_parse_cookiefile($file);
 
   if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') == FALSE) {
     setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
@@ -119,7 +107,7 @@ function geoserver_user_logout($account) {
   $url = parse_url(variable_get('geoserver_url', ''));
   $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
-  unlink(_geoserver_get_cookiefile());
+  unlink(geoserver_get_cookiefile());
 }
 
 /**
@@ -236,7 +224,7 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_POSTFIELDS, $content);
   curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
+  curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
 
   $result = new stdClass();
   $result->content = $content;
@@ -298,7 +286,7 @@ function geoserver_put($url, $content) {
   curl_setopt($request, CURLOPT_INFILESIZE, drupal_strlen($content));
   curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
+  curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
 
   $result = new stdClass();
   $result->url  = $url;
@@ -329,7 +317,7 @@ function geoserver_get($url, $uid = NULL) {
   $request = curl_init($url);
 
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile($uid));
+  curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile($uid));
 
   $result = new stdClass();
   $result->url = $url;
@@ -364,7 +352,7 @@ function geoserver_delete($url) {
   $request = curl_init($url);
 
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_COOKIEFILE, _geoserver_get_cookiefile());
+  curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
   curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'DELETE');
 
   $result = new stdClass();
@@ -518,12 +506,33 @@ function geoserver_layer_type_load($name, $reset = FALSE) {
  *
  * @return string Path of GeoServer's session cookie.
  */
-function _geoserver_get_cookiefile($uid = NULL) {
+function geoserver_get_cookiefile($uid = NULL) {
   if (empty($uid)) {
     global $user;
     $uid = $user->uid;
   }
   return file_directory_temp() . '/geoserver_session_user_' . $uid;
+}
+
+/**
+ * Parse cookie file.
+ *
+ * @return array Indexed array of cookies.
+ */
+function geoserver_parse_cookiefile($file) {
+  // Parse cookie file.
+  $cookies = array();
+  $lines = file($file);
+  foreach ($lines as $line) {
+    if ('#' === $line{0}) {
+      continue;
+    }
+    $columns = explode("\t", $line);
+    if (isset($columns[5]) && isset($columns[6])) {
+      $cookies[$columns[5]] = drupal_substr($columns[6], 0, -1);
+    }
+  }
+  return $cookies;
 }
 
 class geoserver_resource_exception extends Exception {};
