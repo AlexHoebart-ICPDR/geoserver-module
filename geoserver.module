@@ -62,6 +62,12 @@ function geoserver_ctools_plugin_type() {
  */
 function geoserver_user_login(&$edit, $account) {
 
+  $url = variable_get('geoserver_url', '');
+  if (empty($url)) {
+    // GeoServer not configured yet.
+    return;
+  }
+
   $url    = parse_url(variable_get('geoserver_url', ''));
   $fields = 'username=' . urlencode($edit['values']['name']) .
             '&password=' . urlencode($edit['values']['pass']);
