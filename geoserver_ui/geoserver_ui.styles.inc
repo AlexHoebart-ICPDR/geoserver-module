@@ -16,7 +16,7 @@ function geoserver_ui_styles_list() {
   $rows = array();
   $header = array(t('Title'), t('Description'), t('GeoServer'), t('Actions'));
 
-  $styles = geoserver_styles_load();
+  $styles = geoserver_styles();
 
   // Create table rows.
   foreach ($styles as $style) {
@@ -45,17 +45,17 @@ function geoserver_ui_styles_list() {
     // Add description and links.
     $row[] = $style->description;
 
-    switch ($style->get_status()) {
-      case (geoserver_style_type::STATUS_FOUND_SAME):
+    switch (geoserver_style_status($style)) {
+      case (GEOSERVER_STATUS_FOUND_SAME):
         $row[] = t('Same');
         break;
 
-      case (geoserver_style_type::STATUS_FOUND_DIFF):
+      case (GEOSERVER_STATUS_FOUND_DIFF):
         $row[] = t('Different');
         $links[] = l(t('Update'), "admin/structure/geoserver/styles/{$style->name}/update");
         break;
 
-      case (geoserver_style_type::STATUS_NOT_FOUND):
+      case (GEOSERVER_STATUS_NOT_FOUND):
         $row[] = t('Unavailable');
         $links[] = l(t('Create'), "admin/structure/geoserver/styles/{$style->name}/create");
         break;
@@ -69,32 +69,6 @@ function geoserver_ui_styles_list() {
   return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
-///**
-// * Get style type options.
-// */
-//function geoserver_ui_style_types($type) {
-//  $form = array();
-//  $form['style_type_help'] = array(
-//    '#type' => 'item',
-//    '#markup' => t('Select a style type to create a new style.'),
-//  );
-//
-//  $style_types = geoserver_style_types();
-//
-//  foreach ($style_types as $key => $plugin) {
-//    $class = ctools_plugin_get_class($plugin, 'style_type');
-//    if ($class) {
-//      // Build form.
-//      $form[$key] = array(
-//        '#type' => 'item',
-//        '#title' => l($plugin['title'], "admin/structure/geoserver/styles/add/{$key}"),
-//        '#description' => $plugin['description'],
-//      );
-//    }
-//  }
-//  return $form;
-//}
-
 /**
  * style add/edit form.
  */
@@ -103,13 +77,6 @@ function geoserver_ui_styles_form($form_state, $args) {
   $form = array();
   $style = $args['build_info']['args'][0];
 
-//  $form['style']['basics'] = array(
-//    '#tree' => TRUE,
-//    '#type' => 'fieldset',
-//    '#title' => t('style Basics'),
-//    '#description' => t('The following settings are for all styles.'),
-//    '#tree' => FALSE,
-//  );
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Style Title'),
@@ -153,23 +120,22 @@ function geoserver_ui_styles_form($form_state, $args) {
  */
 function geoserver_ui_styles_form_submit(&$form, &$form_state) {
 
-  if (!empty($form_state['values']['name'])) {
-      return (db_select('geoserver_styles')
-          ->fields('geoserver_styles', array('name'))
-          ->condition('name', $form_state['values']['name'])
-          ->execute()
-          ->fetchCol()) ?
-        drupal_write_record('geoserver_styles', $form_state['values'], 'name') :
-        drupal_write_record('geoserver_styles', $form_state['values']);
-    }
+  // Create style object.
+  $style = new stdClass();
+  $style->name = $form_state['values']['name'];
+  $style->title = $form_state['values']['title'];
+  $style->description = $form_state['values']['description'];
+  $style->data = $form_state['values']['data'];
+
+  $success = geoserver_style_save($style);
 
   // Redirect to edit page.
   if ($success) {
-    drupal_set_message(t('style saved.'));
+    drupal_set_message(t('Style saved.'));
     $form_state['redirect'] = 'admin/structure/geoserver/styles/' . $style->name . '/edit';
   }
   else {
-    form_set_error('openstyles', t('Error trying to save style.'));
+    form_set_error('geoserver', t('Error trying to save style.'));
   }
 }
 
@@ -194,8 +160,7 @@ function geoserver_ui_styles_update_submit($form, &$form_state) {
 
   $style = $form_state['values']['style'];
   try {
-    $resource = $style->to_resource();
-    $resource->update();
+    geoserver_style_update($style);
     drupal_set_message(t('%style was updated.', array('%style' => $style->title)));
   } catch (geoserver_resource_exception $exc) {
     drupal_set_message(t('Error when attempting to update %style: %message',
@@ -228,13 +193,10 @@ function geoserver_ui_styles_create_submit($form, &$form_state) {
   $style = $form_state['values']['style'];
 
   try {
-
-    $resource = $style->to_resource();
-    $result = $resource->create();
+    geoserver_style_create($style);
     drupal_set_message(t('%style was created.', array('%style' => $style->title)));
-
-  } catch (geoserver_resource_exception $exc) {
-
+  }
+  catch (Exception $exc) {
     drupal_set_message(t('Error when attempting to create %style: %message',
         array('%style' => $style->title, '%message' => $exc->getMessage())), 'error');
   }
@@ -251,19 +213,7 @@ function geoserver_ui_styles_delete($form_state, $args) {
   $style = $args['build_info']['args'][0];
 
   // Create create form.
-  $form = array(
-    'style' => array('#type' => 'value', '#value' => $style),
-    'target' => array(
-      '#type' => 'select',
-      '#title' => 'style configuration',
-      '#description' => 'Please select which style configuration you want to delete.',
-      '#options' => array(
-        'all' => t('Drupal and GeoServer'),
-        'drupal' => t('Drupal'),
-        'geoserver' => t('GeoServer'),
-      ),
-    ),
-  );
+  $form = array('style' => array('#type' => 'value', '#value' => $style));
   $message = t('Are you sure you want to delete %style?', array('%style' => $style->title));
   return confirm_form($form, $message, 'admin/structure/geoserver/styles');
 }
@@ -274,22 +224,12 @@ function geoserver_ui_styles_delete($form_state, $args) {
 function geoserver_ui_styles_delete_submit($form, &$form_state) {
 
   $style = $form_state['values']['style'];
-  $target = $form_state['values']['target'];
 
   try {
-    if ($target == 'all' || $taget == 'geoserver') {
-      $resource = $style->to_resource();
-      $resource->delete();
-    }
-
-    if ($target == 'all' || $target == 'drupal') {
-      db_delete('geoserver_styles')->condition('name', $style->name)->execute();
-    }
-
+    geoserver_style_delete($style);
     drupal_set_message(t('%style was delete.', array('%style' => $style->title)));
-
-  } catch (geoserver_resource_exception $exc) {
-
+  }
+  catch (Exception $exc) {
     drupal_set_message(t('Error when attempting to delete %style: %message',
         array('%style' => $style->title, '%message' => $exc->getMessage())), 'error');
   }
