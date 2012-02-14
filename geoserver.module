@@ -67,6 +67,24 @@ function geoserver_ctools_plugin_type() {
  */
 function geoserver_user_login(&$edit, $account) {
 
+  if (isset($edit['values'])) {
+    $success = geoserver_login($edit['values']['name'], $edit['values']['pass']);
+
+    if (!$success) {
+      watchdog('geoserver', 'Could not authenticate %username at %url.',
+          array('%username' => urlencode($edit['values']['name']), '%url' => $url), WATCHDOG_ERROR);
+    }
+  }
+}
+
+/**
+ * GeoServer login.
+ *
+ * @param string $username GeoServer username.
+ * @param string $password GeoServer password.
+ * @return boolean Status of login.
+ */
+function geoserver_login($username, $password) {
   $url = variable_get('geoserver_url', '');
   if (empty($url)) {
     // GeoServer not configured yet.
@@ -75,8 +93,7 @@ function geoserver_user_login(&$edit, $account) {
 
   $url = parse_url($url);
   $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
-  $fields = 'username=' . urlencode($edit['values']['name']) .
-            '&password=' . urlencode($edit['values']['pass']);
+  $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
 
   $file   = geoserver_get_cookiefile();
   file_put_contents($file, '');
@@ -96,11 +113,10 @@ function geoserver_user_login(&$edit, $account) {
   $cookies = geoserver_parse_cookiefile($file);
 
   if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') == FALSE) {
-    setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
+    return setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
   }
   else {
-    watchdog('geoserver', 'Could not authenticate %username at %url.',
-        array('%username' => urlencode($edit['values']['name']), '%url' => $url), WATCHDOG_ERROR);
+    return FALSE;
   }
 }
 
