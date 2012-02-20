@@ -39,6 +39,7 @@ function geoserver_ui_layers_list() {
         break;
 
       case EXPORT_IN_CODE:
+        $links[] = l(t('Edit'), "admin/structure/geoserver/layers/{$layer->name}/edit");
         $row[] = $layer->title . ' <em><small>(' . t('Default') . ')</small></em>';
         break;
     }
