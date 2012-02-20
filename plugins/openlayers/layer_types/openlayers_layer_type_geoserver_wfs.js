@@ -15,13 +15,27 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
     projection: 'EPSG:'+map.projection,
     buffer: 0,
     styleMap: new OpenLayers.StyleMap(),
-    protocol: new OpenLayers.Protocol.WFS({
-      version: "1.1.0",
+    protocol: new OpenLayers.Protocol.Script({
       url: options.protocol.url,
-      featureType: options.protocol.typeName,
-      geometryName: options.protocol.geometryName,
-      featureNS: options.protocol.featureNS,
-      srsName: 'EPSG:'+map.projection
+      callbackKey: 'format_options',
+      callbackPrefix: 'callback:',
+      params: {
+        service: 'WFS',
+        version: '1.0.0',
+        request: 'GetFeature',
+        typeName: options.protocol.featureNS+':'+options.protocol.typeName,
+        outputFormat: 'json',
+        srsName: 'EPSG:'+map.projection
+      },
+      filterToParams: function(filter, params) {
+        if (filter.type === OpenLayers.Filter.Spatial.BBOX) {
+          params.bbox = filter.value.toArray();
+          if (filter.projection) {
+            params.bbox.push(filter.projection.getCode());
+          }
+        }
+        return params;
+      }
     })
   });
   
