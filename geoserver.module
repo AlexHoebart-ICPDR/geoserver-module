@@ -249,18 +249,11 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
 
   $result = new stdClass();
+  $result->url = $url;
   $result->content = $content;
   $result->data = curl_exec($request);
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
-
-  if ($result->code === 200) {
-    watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  }
-  else {
-    watchdog('geoserver', 'Requested %url with error %code: %message',
-      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
-  }
 
   return $result;
 }
@@ -316,14 +309,6 @@ function geoserver_put($url, $content) {
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
 
-  if ($result->code === 200) {
-    watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  }
-  else {
-    watchdog('geoserver', 'Requested %url with error %code: %message',
-      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
-  }
-
   return $result;
 }
 
@@ -349,14 +334,6 @@ function geoserver_get($url, $uid = NULL) {
 
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
     $result->data = json_decode($result->data);
-  }
-
-  if ($result->code === 200) {
-    watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  }
-  else {
-    watchdog('geoserver', 'Requested %url with error %code: %message',
-      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
   }
 
   return $result;
@@ -385,14 +362,6 @@ function geoserver_delete($url) {
 
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
     $result->data = json_decode($result->data);
-  }
-
-  if ($result->code === 200) {
-    watchdog('geoserver', 'Requested %url.', array('%url' => $url));
-  }
-  else {
-    watchdog('geoserver', 'Requested %url with error %code: %message',
-      array('%url' => $url, '%code' => $result->code, '%message' => $result->data), WATCHDOG_ERROR);
   }
 
   return $result;
