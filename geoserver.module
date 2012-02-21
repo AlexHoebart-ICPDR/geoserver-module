@@ -88,7 +88,7 @@ function geoserver_login($username, $password) {
   $url = variable_get('geoserver_url', '');
   if (empty($url)) {
     // GeoServer not configured yet.
-    return;
+    return FALSE;
   }
 
   $url = parse_url($url);
@@ -113,7 +113,8 @@ function geoserver_login($username, $password) {
   $cookies = geoserver_parse_cookiefile($file);
 
   if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') == FALSE) {
-    return setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
+    return drupal_is_cli() ? TRUE : 
+      setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
   }
   else {
     return FALSE;
