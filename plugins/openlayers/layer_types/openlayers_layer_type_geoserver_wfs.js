@@ -23,7 +23,8 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         service: 'WFS',
         version: '1.0.0',
         request: 'GetFeature',
-        typeName: options.protocol.featureNS+':'+options.protocol.typeName,
+        // typeName equals layer name
+        typeName: options.protocol.typeName,
         outputFormat: 'json',
         srsName: 'EPSG:'+map.projection
       },

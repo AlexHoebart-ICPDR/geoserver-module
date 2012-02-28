@@ -62,7 +62,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         'url' => array(
           '#type' => 'textfield',
           '#title' => t('URL'),
-          '#description' => t('The URL of the WFS server.'),
+          '#description' => t('The URL of the WFS server. For example: http://your_hostname/geoserver/your_workspace_name/ows'),
           '#maxlength' => 1024,
           '#default_value' => isset($this->data['protocol']['url']) ?
               $this->data['protocol']['url'] : ''
@@ -70,24 +70,16 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         'typeName' => array(
           '#type' => 'textfield',
           '#title' => t('Type Name'),
-          '#description' => t('The typename of the features requested.'),
+          '#description' => t('The typename of the features requested. Equals the layer name in GeoServer.'),
           '#maxlength' => 100,
           '#default_value' => isset($this->data['protocol']['typeName']) ?
               $this->data['protocol']['typeName'] : ''
-        ),
-        'geometryName' => array(
-          '#type' => 'textfield',
-          '#title' => t('Geometry Name'),
-          '#description' => t('The name of the geometry field in the GML returned from the WFS layer.'),
-          '#maxlength' => 100,
-          '#default_value' => isset($this->data['protocol']['geometryName']) ?
-              $this->data['protocol']['geometryName'] : ''
         ),
       ),
       'sld' => array(
         '#type' => 'textarea',
         '#title' => t('SLD'),
-        '#description' => t('Styled Layer Descriptor (SLD)'),
+        '#description' => t('Styled Layer Descriptor (SLD). Can be left empty to use default styling.'),
         '#default_value' => isset($this->data['sld']) ? $this->data['sld'] : ''
       ),
       'layer_type' => array(
