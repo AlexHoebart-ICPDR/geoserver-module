@@ -78,7 +78,7 @@ function geoserver_user_login(&$edit, $account) {
 }
 
 /**
- * GeoServer login.
+ * GeoServer login. Tries to authenticate the Drupal user with its Drupal credentials on GeoServer on Drupal login.
  *
  * @param string $username GeoServer username.
  * @param string $password GeoServer password.

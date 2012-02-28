@@ -12,7 +12,7 @@
  *
  * @see system_settings_form()
  */
-function geoserver_ui_admin_settings() {
+function geoserver_ui_admin_settings_form() {
 
   $url        = variable_get('geoserver_url', '');
   $namespace  = variable_get('geoserver_namespace', '');
@@ -40,11 +40,12 @@ function geoserver_ui_admin_settings() {
       '#type' => 'textfield',
       '#title' => t('URL'),
       '#default_value' => $url,
-      '#description' => 'The URL where GeoServer is running. Needs to end with a slash.',
+      '#description' => t('The URL where GeoServer is running. You need to re-login into Drupal to allow authentication to GeoServer before the new server can be used.'),
     ),
     'geoserver_workspace' => array(
       '#type' => 'select',
       '#title' => t('Workspace'),
+      '#description' => t('GeoServer workspace.'),
       '#options' => $workspaces,
       '#default_value' => $workspace,
       '#ajax' => array(
@@ -55,13 +56,27 @@ function geoserver_ui_admin_settings() {
     'geoserver_namespace' => array(
       '#type' => 'textfield',
       '#title' => t('Namespace URI'),
+      '#description' => t('Namespace will be automatically adjusted when you select a workspace.'),
       '#disabled' => TRUE,
       '#default_value' => $namespace,
       '#prefix' => '<div id="geoserver_namespace">',
       '#suffix' => '</div>',
     ),
   );
-  return system_settings_form($form);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+
+/**
+ */
+function geoserver_ui_admin_settings_form_submit(&$form, &$form_state) {
+  $form_state['values']['geoserver_url'] = rtrim($form_state['values']['geoserver_url'], '/') . '/';
+  foreach($form_state['values'] as $name => $value) {
+    variable_set($name, $value);
+  }
 }
 
 /**

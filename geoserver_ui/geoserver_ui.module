@@ -26,7 +26,7 @@ function geoserver_ui_menu() {
     'title' => 'GeoServer',
     'description' => 'Manage a GeoServer instance.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_ui_admin_settings'),
+    'page arguments' => array('geoserver_ui_admin_settings_form'),
     'access arguments' => array('administer geoserver'),
     'file' => 'geoserver_ui.admin.inc',
     'type' => MENU_NORMAL_ITEM,
