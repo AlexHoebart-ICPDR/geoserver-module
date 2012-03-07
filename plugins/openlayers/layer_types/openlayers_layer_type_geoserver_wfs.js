@@ -9,6 +9,7 @@
  */
 Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, map, options) {
 
+  var sld, renderIntent, intents = ['default', ''];
   var layer = new OpenLayers.Layer.Vector(title, {
     drupalID: options.drupalID,
     strategies: [new OpenLayers.Strategy.BBOX()],
@@ -39,11 +40,16 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
       }
     })
   });
-  
+
   // Apply GeoServer SLD.
-  var sld = new OpenLayers.Format.SLD().read(options.sld);
-  if (sld.namedLayers[options.protocol.typeName]) {
-    jQuery.each(sld.namedLayers[options.protocol.typeName].userStyles, function(index, style) {
+  sld = new OpenLayers.Format.SLD().read(options.sld);
+  jQuery.each(sld.namedLayers, function(index, namedLayer) {
+
+    if (typeof namedLayer != 'object') {
+      return;
+    }
+
+    jQuery.each(namedLayer.userStyles, function(index, style) {
 
       // Set cursor to pointer.
       style.defaultsPerSymbolizer = false;
@@ -61,12 +67,20 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         }
       });
 
-      // Apply style to layer.
-      layer.styleMap.styles[style.description] = style;
-      layer.redraw();
+      // Use style description if it matches a render intent.
+      renderIntent = 'default';
+      if (jQuery.inArray(style.description, intents) > -1) {
+        renderIntent = style.description;
+      }
+
+      // Apply style to layer if the specific render intent is not already set.
+      if (jQuery.inArray(renderIntent, layer.styleMap.styles) === -1) {
+        layer.styleMap.styles[renderIntent] = style;
+      }
     });
-  }
-  
+  });
+  layer.redraw();
+
   return layer;
 };
 

@@ -12,6 +12,7 @@ function geoserver_openlayers_layers() {
 
   $ol_layers = array();
   $gs_layers = geoserver_layers_load();
+  $gs_styles = geoserver_styles();
   $url = variable_get('geoserver_url', '');
   $workspace = variable_get('geoserver_workspace', '');
 
@@ -51,6 +52,8 @@ function geoserver_openlayers_layers() {
     }
 
     if ($gs_layer->data['openlayers']['wfs']) {
+      $style = $gs_layer->data['style'];
+      $sld = isset($gs_styles[$style]) ? $gs_styles[$style]->data : '';
       $ol_layer = new stdClass();
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_wfs';
@@ -59,7 +62,7 @@ function geoserver_openlayers_layers() {
           array('%name' => $gs_layer->name));
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_geoserver_wfs',
-        'sld' => $gs_layer->data['options']['sld'],
+        'sld' => $sld,
         'protocol' => array(
           'url' => $url . 'wfs',
           'typeName' => $gs_layer->name,

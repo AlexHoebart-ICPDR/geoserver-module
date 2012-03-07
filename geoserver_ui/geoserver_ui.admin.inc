@@ -71,10 +71,11 @@ function geoserver_ui_admin_settings_form() {
 }
 
 /**
+ * Submit handler for settings form.
  */
 function geoserver_ui_admin_settings_form_submit(&$form, &$form_state) {
   $form_state['values']['geoserver_url'] = rtrim($form_state['values']['geoserver_url'], '/') . '/';
-  foreach($form_state['values'] as $name => $value) {
+  foreach ($form_state['values'] as $name => $value) {
     variable_set($name, $value);
   }
 }

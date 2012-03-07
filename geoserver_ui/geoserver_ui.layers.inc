@@ -103,6 +103,11 @@ function geoserver_ui_layer_types($type) {
  */
 function geoserver_ui_layers_form($form_state, $args) {
 
+  $styles = array('');
+  foreach (geoserver_styles() as $style) {
+    $styles[$style->name] = $style->title;
+  }
+
   $form = array();
   $layer = $args['build_info']['args'][0];
 
@@ -140,6 +145,21 @@ function geoserver_ui_layers_form($form_state, $args) {
 
   $form['layer']['data'] = array(
     '#tree' => TRUE,
+    '#type' => 'fieldset',
+    '#title' => t('Layer Configuration'),
+  );
+
+  $form['layer']['data']['style'] = array(
+    '#type' => 'select',
+    '#title' => t('Style'),
+    '#options' => $styles,
+    '#default_value' => isset($layer->data['style']) ? $layer->data['style'] : '',
+    '#description' => t('Please select a default style for this layer.'),
+  );
+
+  $form['layer']['data']['type'] = array(
+    '#type' => 'hidden',
+    '#value' => get_class($layer),
   );
 
   if (module_exists('openlayers')) {
@@ -180,11 +200,6 @@ function geoserver_ui_layers_form($form_state, $args) {
       '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '',
     );
   }
-
-  $form['layer']['data']['type'] = array(
-    '#type' => 'hidden',
-    '#value' => get_class($layer),
-  );
 
   $form['layer']['data']['options'] = array(
     '#type' => 'fieldset',

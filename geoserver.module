@@ -78,7 +78,8 @@ function geoserver_user_login(&$edit, $account) {
 }
 
 /**
- * GeoServer login. Tries to authenticate the Drupal user with its Drupal credentials on GeoServer on Drupal login.
+ * GeoServer login. Tries to authenticate the Drupal user with its Drupal
+ *     credentials on GeoServer on Drupal login.
  *
  * @param string $username GeoServer username.
  * @param string $password GeoServer password.
@@ -113,7 +114,7 @@ function geoserver_login($username, $password) {
   $cookies = geoserver_parse_cookiefile($file);
 
   if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') == FALSE) {
-    return drupal_is_cli() ? TRUE : 
+    return drupal_is_cli() ? TRUE :
       setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
   }
   else {

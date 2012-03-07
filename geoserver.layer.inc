@@ -138,9 +138,10 @@ abstract class geoserver_resource {
   /**
    * Constructor.
    */
-  function __construct($local_layer) {
+  function __construct($name, $datastore) {
+    $this->name = $name;
+    $this->datastore = $datastore;
     $this->workspace = variable_get('geoserver_workspace', '');
-    $this->local_layer = $local_layer;
   }
 
   /**
@@ -198,7 +199,7 @@ abstract class geoserver_layer_type {
   /**
    * Import layer from remote resource definition.
    */
-  abstract function from_resource();
+  abstract function from_resource(geoserver_resource $resource);
 
   /**
    * Return fields of layer settings form.
@@ -211,13 +212,15 @@ abstract class geoserver_layer_type {
    * Get status of layer.
    */
   function get_status() {
-    $resource = clone $this;
-    $resource->from_resource();
-    $layer = $this->to_record();
-    $remote = $resource->to_record();
-    $layer['data']['options']['sld'] = $remote['data']['options']['sld'];
-    if (!empty($resource->name)) {
-      if ($layer != $resource->to_record()) {
+
+    $resource = new geoserver_resource_feature_type($this->name, $this->datastore);
+    $resource->read();
+
+    $remote = clone $this;
+    $remote->from_resource($resource);
+
+    if (!empty($remote->name)) {
+      if ($this->to_record() != $remote->to_record()) {
         return geoserver_layer_type::STATUS_FOUND_DIFF;
       }
       else {
@@ -264,14 +267,13 @@ class geoserver_resource_feature_type extends geoserver_resource {
 
   public $feature_type;
   public $layer;
-  public $sld;
 
   /**
    * Create remote feature type.
    */
   public function create() {
 
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes';
+    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes';
     $result = geoserver_post($url . '.json', $this->feature_type);
     if ($result->code != 201) {
       throw new geoserver_resource_exception("Could not create featuretype: $result->data");
@@ -288,7 +290,7 @@ class geoserver_resource_feature_type extends geoserver_resource {
    */
   public function update() {
 
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes';
+    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes';
     $result = geoserver_put($url . '/' . $this->name . '.json', $this->feature_type);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update featuretypes: $result->data");
@@ -304,8 +306,8 @@ class geoserver_resource_feature_type extends geoserver_resource {
    * Delete remote feature type.
    */
   public function delete() {
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes';
-    $result = geoserver_delete($url . '/' . $this->local_layer->name . '?recurse=true');
+    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes';
+    $result = geoserver_delete($url . '/' . $this->name . '?recurse=true');
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not delete featuretype: $result->data");
     }
@@ -316,18 +318,15 @@ class geoserver_resource_feature_type extends geoserver_resource {
    */
   public function read() {
 
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->local_layer->datastore . '/featuretypes/';
-    $result = geoserver_get($url . $this->local_layer->name . '.json');
+    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore;
+    $result = geoserver_get($url . '/featuretypes/' . $this->name . '.json');
     if ($result->code == 200) {
       $this->feature_type = $result->data;
-      $this->layer = NULL;
-      $result = geoserver_get('rest/styles/' . $this->local_layer->name . '.sld');
+
+      $result = geoserver_get('rest/layers/' . $this->name . '.json');
       if ($result->code == 200) {
-        $this->sld = $result->data;
+        $this->layer = $result->data;
       }
-    }
-    else {
-      // TODO: throw exception?
     }
   }
 }
@@ -356,7 +355,7 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
         'name' => $this->name,
         'type' => 'VECTOR',
         'defaultStyle' => array(
-          'name' => $this->name,
+          'name' => $this->data['style'],
         ),
         'resource' => array(
           '@class' => 'featureType',
@@ -371,30 +370,26 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
    * Import from remote layer definition.
    */
   function from_layer($layer) {
-    // Nothing to do here...
+    $style = isset($layer->layer->defaultStyle->name) ? $layer->layer->defaultStyle->name : '';
+    $this->data['style'] = $style;
   }
 
   /**
    * Export layer to remote resource definition.
    */
   function to_resource() {
-    $remote_layer = new geoserver_resource_feature_type($this);
-    $remote_layer->feature_type = $this->to_feature_type();
-    $remote_layer->name = $this->name;
-    $remote_layer->layer = $this->to_layer();
-    $remote_layer->sld = $this->data['options']['sld'];
-    return $remote_layer;
+    $resource = new geoserver_resource_feature_type($this->name, $this->datastore);
+    $resource->feature_type = $this->to_feature_type();
+    $resource->layer = $this->to_layer();
+    return $resource;
   }
 
   /**
    * Import layer from remote resource definition.
    */
-  function from_resource() {
-    $remote_layer = new geoserver_resource_feature_type($this);
-    $remote_layer->read();
-    $this->from_feature_type($remote_layer->feature_type);
-    $this->from_layer($remote_layer->layer);
-    $this->data['options']['sld'] = $remote_layer->sld;
+  function from_resource(geoserver_resource $resource) {
+    $this->from_feature_type($resource->feature_type);
+    $this->from_layer($resource->layer);
   }
 
 }
