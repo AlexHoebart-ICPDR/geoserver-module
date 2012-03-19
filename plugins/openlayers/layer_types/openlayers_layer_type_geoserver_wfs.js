@@ -9,7 +9,7 @@
  */
 Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, map, options) {
 
-  var sld, renderIntent, intents = ['default', ''];
+  var sld, renderIntent, intents = ['default', 'select', 'temporary', 'delete'];
   var layer = new OpenLayers.Layer.Vector(title, {
     drupalID: options.drupalID,
     strategies: [new OpenLayers.Strategy.BBOX()],
