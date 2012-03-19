@@ -71,8 +71,8 @@ function geoserver_user_login(&$edit, $account) {
     $success = geoserver_login($edit['values']['name'], $edit['values']['pass']);
 
     if (!$success) {
-      watchdog('geoserver', 'Could not authenticate %username at %url.',
-          array('%username' => urlencode($edit['values']['name']), '%url' => $url), WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not authenticate %username at GeoServer.',
+          array('%username' => urlencode($edit['values']['name'])), WATCHDOG_ERROR);
     }
   }
 }
