@@ -93,13 +93,13 @@ function geoserver_login($username, $password) {
   }
 
   $url = parse_url($url);
-  $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
+  $host_port = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
 
   $file   = geoserver_get_cookiefile();
   file_put_contents($file, '');
 
-  $request = curl_init('http://' . $url['host'] . $url['path'] . 'j_spring_security_check');
+  $request = curl_init('http://' . $host_port . $url['path'] . 'j_spring_security_check');
   curl_setopt($request, CURLOPT_POST, 3);
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
@@ -114,8 +114,12 @@ function geoserver_login($username, $password) {
   $cookies = geoserver_parse_cookiefile($file);
 
   if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') == FALSE) {
-    return drupal_is_cli() ? TRUE :
-      setcookie('JSESSIONID', $cookies['JSESSIONID'], 0, $url['path'], $url['host']);
+    if (drupal_is_cli()) {
+      return TRUE;
+    } else {
+      $expire = ini_get('session.cookie_lifetime') ? time()+ini_get('session.cookie_lifetime') : 0;
+      return setcookie('JSESSIONID', $cookies['JSESSIONID'], $expire, $url['path'], $url['host']);
+    }
   }
   else {
     return FALSE;
