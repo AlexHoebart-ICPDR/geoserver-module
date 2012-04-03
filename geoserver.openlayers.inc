@@ -72,6 +72,34 @@ function geoserver_openlayers_layers() {
       );
       $ol_layers[$ol_layer->name] = $ol_layer;
     }
+
+    if ($gs_layer->data['openlayers']['wms']) {
+      $ol_layer = new stdClass();
+      $ol_layer->api_version = 1;
+      $ol_layer->name = $gs_layer->name . '_wms';
+      $ol_layer->title = $gs_layer->title;
+      $ol_layer->description = t('Untiled WMS layer of GeoServer layer %name',
+          array('%name' => $gs_layer->name));
+      $ol_layer->data = array(
+        'layer_type' => 'openlayers_layer_type_wms',
+        'base_url' => $url . 'wms',
+        'params' => array(
+          'isBaseLayer' => 0,
+          'buffer' => '2',
+          'ratio' => '1.5',
+          'singleTile' => 1,
+        ),
+        'options' => array(
+          'srs' => $gs_layer->data['openlayers']['wms_srs'],
+          'TRANSPARENT' => 'true',
+          'exceptions' => 'application/vnd.ogc.se_inimage',
+          'format' => 'image/png',
+          'layers' => $workspace . ':' . $gs_layer->name,
+          'styles' => '',
+        ),
+      );
+      $ol_layers[$ol_layer->name] = $ol_layer;
+    }
   }
 
   return $ol_layers;

@@ -178,6 +178,8 @@ function geoserver_ui_layers_form($form_state, $args) {
       '#title' => t('Provide a cached OpenLayers WMS layer.'),
       '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '',
     );
+    // TODO: merge *_srs fields, depends on Drupal 7.13
+    // Conditional visibility: http://drupal.org/node/1464758
     $form['layer']['data']['openlayers']['gwc_srs'] = array(
       '#type' => 'select',
       '#title' => t('Projection'),
@@ -198,6 +200,22 @@ function geoserver_ui_layers_form($form_state, $args) {
       '#type' => 'checkbox',
       '#title' => t('Provide an untiled OpenLayers WMS layer.'),
       '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '',
+    );
+    $form['layer']['data']['openlayers']['wms_srs'] = array(
+      '#type' => 'select',
+      '#title' => t('Projection'),
+      '#options' => array(
+        'EPSG:4326' => '4326',
+        'EPSG:900913' => '900913',
+      ),
+      '#default_value' => isset($openlayers['wms_srs']) ? $openlayers['wms_srs'] : '',
+      '#states' => array(
+        'visible' => array(
+          ':input[name="data[openlayers][wms]"]' => array(
+            'checked' => TRUE,
+          ),
+        ),
+      ),
     );
   }
 
