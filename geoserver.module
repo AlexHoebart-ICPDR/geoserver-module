@@ -68,11 +68,12 @@ function geoserver_ctools_plugin_type() {
 function geoserver_user_login(&$edit, $account) {
 
   if (isset($edit['values'])) {
-    $success = geoserver_login($edit['values']['name'], $edit['values']['pass']);
+    $geoserver_login = geoserver_login($edit['values']['name'], $edit['values']['pass']);
 
-    if (!$success) {
-      watchdog('geoserver', 'Could not authenticate %username at GeoServer.',
-          array('%username' => urlencode($edit['values']['name'])), WATCHDOG_ERROR);
+    if ($geoserver_login !== TRUE) {
+      watchdog('geoserver', 'Could not authenticate %username at GeoServer: %reason',
+          array('%username' => urlencode($edit['values']['name']), '%reason' => $geoserver_login), 
+          WATCHDOG_ERROR);
     }
   }
 }
@@ -83,15 +84,15 @@ function geoserver_user_login(&$edit, $account) {
  *
  * @param string $username GeoServer username.
  * @param string $password GeoServer password.
- * @return boolean Status of login.
+ * @return boolean|string Error message on failure, otherwise TRUE.
  */
 function geoserver_login($username, $password) {
   $url = variable_get('geoserver_url', '');
   if (empty($url)) {
-    // GeoServer not configured yet.
-    return FALSE;
+    return t('URL not configured.');
   }
 
+  // Parse URL to set path and host specific Cookie.
   $url = parse_url($url);
   $host_port = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
@@ -99,7 +100,7 @@ function geoserver_login($username, $password) {
   $file   = geoserver_get_cookiefile();
   file_put_contents($file, '');
 
-  $request = curl_init('http://' . $host_port . $url['path'] . 'j_spring_security_check');
+  $request = curl_init($url['scheme'] . '://' . $host_port . $url['path'] . 'j_spring_security_check');
   curl_setopt($request, CURLOPT_POST, 3);
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
@@ -113,16 +114,26 @@ function geoserver_login($username, $password) {
   $location_path = isset($location_url['query']) ? $location_url['query'] : '';
   $cookies = geoserver_parse_cookiefile($file);
 
-  if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') == FALSE) {
+  if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') === FALSE) {
+
     if (drupal_is_cli()) {
       return TRUE;
+    }
+
+    $expire = ini_get('session.cookie_lifetime') ? time()+ini_get('session.cookie_lifetime') : 0;
+    if (setcookie('JSESSIONID', $cookies['JSESSIONID'], $expire, $url['path'], $url['host'])) {
+      return TRUE;
     } else {
-      $expire = ini_get('session.cookie_lifetime') ? time()+ini_get('session.cookie_lifetime') : 0;
-      return setcookie('JSESSIONID', $cookies['JSESSIONID'], $expire, $url['path'], $url['host']);
+      return t('Unable to set Cookie.');
     }
   }
-  else {
-    return FALSE;
+  else if(isset($cookies['JSESSIONID'])) {
+
+    return t('Wrong user credentials.');
+
+  } else {
+
+    return t('Could not contact GeoServer.');
   }
 }
 
