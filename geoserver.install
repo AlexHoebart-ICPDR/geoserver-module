@@ -221,5 +221,5 @@ function geoserver_update_7100() {
     ),
   );
 
-  db_create_table('geoserver_pk_metadata_table', $schema)
+  db_create_table('geoserver_pk_metadata_table', $schema);
 }
