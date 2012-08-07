@@ -130,5 +130,96 @@ function geoserver_schema() {
       'name' => array('name'),
     ),
   );
+
+  $schema['geoserver_pk_metadata_table'] = array(
+    'description' => 'Specifies which columns to use and what strategy to use to generate new primary key value.',
+    'fields' => array(
+      'table_schema' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'Name of the database schema in which the table is located.',
+      ),
+      'table_name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'Name of the table to be published.',
+      ),
+      'pk_column' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'Name of a column used to form the feauture IDs.',
+      ),
+      'pk_column_idx' => array(
+        'type' => 'int',
+        'description' => 'Index of the column in a multi-column key. In case multi column keys are needed multiple records with the same table schema and table name will be used.',
+      ),
+      'pk_policy' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'description' => 'The new value generation policy (sequence, assigned, autoincrement), used in case a new feature needs to be added in the table (following a WFS-T insert operation).',
+      ),
+      'pk_sequence' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'description' => 'The name of the database sequence to be used when generating a new value for the pk_column.',
+      ),
+    ),
+    'unique keys' => array(
+      'schema_table_column' => array('table_schema', 'table_name', 'pk_column'),
+    ),
+  );
+
   return $schema;
+}
+
+/**
+ * Create table geoserver_pk_metadata_table.
+ */
+function geoserver_update_7100() {
+
+  $schema = array(
+    'description' => 'Specifies which columns to use and what strategy to use to generate new primary key value.',
+    'fields' => array(
+      'table_schema' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'Name of the database schema in which the table is located.',
+      ),
+      'table_name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'Name of the table to be published.',
+      ),
+      'pk_column' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+        'description' => 'Name of a column used to form the feauture IDs.',
+      ),
+      'pk_column_idx' => array(
+        'type' => 'int',
+        'description' => 'Index of the column in a multi-column key. In case multi column keys are needed multiple records with the same table schema and table name will be used.',
+      ),
+      'pk_policy' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'description' => 'The new value generation policy (sequence, assigned, autoincrement), used in case a new feature needs to be added in the table (following a WFS-T insert operation).',
+      ),
+      'pk_sequence' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'description' => 'The name of the database sequence to be used when generating a new value for the pk_column.',
+      ),
+    ),
+    'unique keys' => array(
+      'schema_table_column' => array('table_schema', 'table_name', 'pk_column'),
+    ),
+  );
+
+  db_create_table('geoserver_pk_metadata_table', $schema)
 }
