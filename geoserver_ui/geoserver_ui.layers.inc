@@ -362,7 +362,7 @@ function geoserver_ui_layers_delete_submit($form, &$form_state) {
   $target = $form_state['values']['target'];
 
   try {
-    if ($target == 'all' || $taget == 'geoserver') {
+    if ($target == 'all' || $target == 'geoserver') {
       $resource = $layer->to_resource();
       $resource->delete();
     }
