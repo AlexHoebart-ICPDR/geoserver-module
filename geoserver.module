@@ -100,13 +100,15 @@ function geoserver_login($username, $password) {
   $file   = geoserver_get_cookiefile();
   file_put_contents($file, '');
 
-  $request = curl_init($url['scheme'] . '://' . $host_port . $url['path'] . 'j_spring_security_check');
+  $login_url = $url['scheme'] . '://' . $host_port . $url['path'] . 'j_spring_security_check';
+  $request = curl_init($login_url);
   curl_setopt($request, CURLOPT_POST, 3);
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_HEADER, TRUE);
   $header = curl_exec($request);
+  $http_code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
 
   preg_match('/Location:(.*?)\n/', $header, $matches);
@@ -133,7 +135,8 @@ function geoserver_login($username, $password) {
 
   } else {
 
-    return t('Could not contact GeoServer.');
+    return t('Could not contact GeoServer at @login_url (@http_code).', 
+      array('@login_url' => $login_url, '@http_code' => $http_code));
   }
 }
 
