@@ -66,7 +66,6 @@ function geoserver_openlayers_layers() {
         'protocol' => array(
           'url' => $url . 'wfs',
           'typeName' => $gs_layer->name,
-          'geometryName' => $gs_layer->data['options']['geometry_name'],
           'featureNS' => variable_get('geoserver_namespace', ''),
         ),
       );
