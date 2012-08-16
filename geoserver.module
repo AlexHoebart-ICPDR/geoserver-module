@@ -95,12 +95,14 @@ function geoserver_login($username, $password) {
   // Parse URL to set path and host specific Cookie.
   $url = parse_url($url);
   $host_port = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
+  $url_scheme = empty($url['scheme']) : 'http' ? $url['scheme'];
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
 
   $file   = geoserver_get_cookiefile();
   file_put_contents($file, '');
 
-  $login_url = $url['scheme'] . '://' . $host_port . $url['path'] . 'j_spring_security_check';
+
+  $login_url = $url_scheme . '://' . $host_port . $url['path'] . 'j_spring_security_check';
   $request = curl_init($login_url);
   curl_setopt($request, CURLOPT_POST, 3);
   curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
