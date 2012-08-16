@@ -95,7 +95,7 @@ function geoserver_login($username, $password) {
   // Parse URL to set path and host specific Cookie.
   $url = parse_url($url);
   $host_port = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
-  $url_scheme = empty($url['scheme']) : 'http' ? $url['scheme'];
+  $url_scheme = empty($url['scheme']) ? 'http' : $url['scheme'];
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
 
   $file   = geoserver_get_cookiefile();
