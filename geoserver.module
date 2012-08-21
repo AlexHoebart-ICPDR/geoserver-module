@@ -410,7 +410,7 @@ function geoserver_parse_cookiefile($file) {
   $cookies = array();
   $lines = file($file);
   foreach ($lines as $line) {
-    if ('#' === $line{0}) {
+    if (substr($line, 0, 2) === '# ') {
       continue;
     }
     $columns = explode("\t", $line);
