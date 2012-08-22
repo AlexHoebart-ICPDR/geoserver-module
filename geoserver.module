@@ -91,6 +91,16 @@ function geoserver_login($username, $password) {
   if (empty($url)) {
     return t('URL not configured.');
   }
+  
+  // Let other modules know the a login into GeoServer is going to happen and allow them to map the username to something else
+  $modfiedUserNames = array_unique(module_invoke_all('geoserver_modify_login', $username));
+  if(count($modfiedUserNames)>1){
+    // Abort due to ambiguity of alterations
+    throw new Exception("Cannot log in user name since different modifications have been requested for GeoServer login.");
+  }
+  if(count($modfiedUserNames)===1){
+    $username = $modfiedUserNames[0];
+  }
 
   // Parse URL to set path and host specific Cookie.
   $url = parse_url($url);
@@ -424,3 +434,23 @@ function geoserver_parse_cookiefile($file) {
 }
 
 
+/**
+ * @addtogroup hooks
+ * @{
+ */
+
+/**
+ * Allows to alter the name of the GeoServer user to use when a Drupal user is to be logged in into GeoServer.
+ * 
+ * @param String $username
+ *   Name of Drupal user that is about to be logged in into GeoServer.
+ * 
+ * @return String
+ *   Name of GeoServer user.
+ */
+function hook_geoserver_modify_login($username) {
+}
+
+/**
+ * @} End of "addtogroup hooks".
+ */
