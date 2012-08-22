@@ -13,14 +13,6 @@
 function geoserver_ui_menu() {
   $items = array();
 
-  $items['admin/geoserver'] = array(
-    'title' => 'GeoServer',
-    'description' => 'GeoServer administration.',
-    'page callback' => 'geoserver_ui_admin',
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.admin.inc',
-  );
-
   // Core geoserver settings pages.
   $items['admin/structure/geoserver'] = array(
     'title' => 'GeoServer',

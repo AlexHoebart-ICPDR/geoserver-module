@@ -105,11 +105,3 @@ function geoserver_ui_admin_settings_form_namespace($form, $form_state) {
   return array($form['geoserver_namespace']);
 }
 
-/**
- * Menu callback. Display the administration GUI of GeoServer in an iframe.
- */
-function geoserver_ui_admin() {
-  $url = variable_get('geoserver_url', '');
-  return array('#markup' => '<iframe src="' . $url . '" width="100%" height="2000px" onload="jQuery(\'iframe\').contents().find(\'#header\').hide()"></iframe>');
-}
-
