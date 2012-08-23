@@ -69,6 +69,12 @@ function geoserver_schema() {
         'not null' => TRUE,
         'description' => 'Layer description.',
       ),
+      'source' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Name of Drupal data source.',
+      ),
       'data' => array(
         'type' => 'text',
         'not null' => FALSE,

@@ -103,13 +103,13 @@ function geoserver_ui_layer_types($type) {
  */
 function geoserver_ui_layers_form($form_state, $args) {
 
+  $form = array();
+  $layer = $args['build_info']['args'][0];
+
   $styles = array('');
   foreach (geoserver_styles() as $style) {
     $styles[$style->name] = $style->title;
   }
-
-  $form = array();
-  $layer = $args['build_info']['args'][0];
 
   $form['layer']['basics'] = array(
     '#tree' => TRUE,
@@ -141,6 +141,16 @@ function geoserver_ui_layers_form($form_state, $args) {
     '#title' => t('Layer Description'),
     '#default_value' => isset($layer->description) ? $layer->description : '',
     '#description' => t('The description of your layer, which will appear in the administration interface.'),
+  );
+  $form['layer']['basics']['source'] = array(
+    '#type' => 'select',
+    '#title' => t('Source'),
+    '#options' => $layer->get_sources(),
+    '#default_value' => isset($layer->source) ? $layer->source : '',
+    '#ajax' => array(
+      'callback' => 'geoserver_ui_layer_type_form',
+      'wrapper' => get_class($layer),
+    ),
   );
 
   $form['layer']['data'] = array(
@@ -236,6 +246,15 @@ function geoserver_ui_layers_form($form_state, $args) {
   return $form;
 }
 
+function geoserver_ui_layer_type_form($form, &$form_state) {
+
+  $layer = new $form_state['values']['data']['type'];
+  $layer->name = $form['layer']['basics']['name']['#value'];
+  $layer->load_source($form_state['values']['source']);
+
+  return $layer->options_form($form['layer']['data']['options']);
+}
+
 /**
  * Submit handler for layers.
  */
@@ -244,6 +263,7 @@ function geoserver_ui_layers_form_submit(&$form, &$form_state) {
   $layer->name = $form_state['values']['name'];
   $layer->title = $form_state['values']['title'];
   $layer->description = $form_state['values']['description'];
+  $layer->source = $form_state['values']['source'];
   $layer->data = $form_state['values']['data'];
 
   $success = $layer->save();

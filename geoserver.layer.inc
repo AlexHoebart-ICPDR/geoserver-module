@@ -184,7 +184,7 @@ abstract class geoserver_layer_type {
 
     $this->workspace = variable_get('geoserver_workspace', '');
 
-    foreach (array('name', 'title', 'description', 'data', 'export_type') as $k) {
+    foreach (array('name', 'title', 'description', 'source', 'data', 'export_type') as $k) {
       if (isset($layer->{$k})) {
         $this->{$k} = $layer->{$k};
       }
@@ -204,8 +204,8 @@ abstract class geoserver_layer_type {
   /**
    * Return fields of layer settings form.
    */
-  function options_form($defaults = array()) {
-    return array();
+  function options_form($form = array()) {
+    return $form;
   }
 
   /**
@@ -240,9 +240,10 @@ abstract class geoserver_layer_type {
   function to_record() {
     return array(
       'name' => $this->name,
-      'description' => $this->description,
       'title' => $this->title,
+      'description' => $this->description,
       'data' => $this->data,
+      'source' => $this->source,
     );
   }
 
