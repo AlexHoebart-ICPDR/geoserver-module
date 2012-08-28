@@ -112,69 +112,7 @@ function geoserver_ui_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
   );
-
-  // Styles.
-  $items['admin/structure/geoserver/styles'] = array(
-    'title' => 'Styles',
-    'page callback' => 'geoserver_ui_styles_list',
-    'page arguments' => array(3),
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.styles.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -10,
-  );
-  $items['admin/structure/geoserver/styles/list'] = array(
-    'title' => 'List',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -20,
-  );
-  $items['admin/structure/geoserver/styles/add'] = array(
-    'title' => 'Add',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_ui_styles_form', 5),
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.styles.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -10,
-  );
-  $items['admin/structure/geoserver/styles/%geoserver_style/edit'] = array(
-    'title' => 'Edit style',
-    'description' => 'Edit geoserver style.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_ui_styles_form', 4),
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.styles.inc',
-    'type' => MENU_LOCAL_TASK,
-    'tab_parent' => 'admin/structure/geoserver/styles',
-  );
-  $items['admin/structure/geoserver/styles/%geoserver_style/update'] = array(
-    'title' => 'Update style',
-    'description' => 'Update GeoServer style.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_ui_styles_update', 4),
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.styles.inc',
-    'type' => MENU_NORMAL_ITEM,
-  );
-  $items['admin/structure/geoserver/styles/%geoserver_style/create'] = array(
-    'title' => 'Create style',
-    'description' => 'Create GeoServer style.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_ui_styles_create', 4),
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.styles.inc',
-    'type' => MENU_NORMAL_ITEM,
-  );
-  $items['admin/structure/geoserver/styles/%geoserver_style/delete'] = array(
-    'title' => 'Delete style',
-    'description' => 'Delete GeoServer style.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('geoserver_ui_styles_delete', 4),
-    'access arguments' => array('administer geoserver'),
-    'file' => 'geoserver_ui.styles.inc',
-    'type' => MENU_NORMAL_ITEM,
-  );
-
+  
   return $items;
 }
 
@@ -188,4 +126,13 @@ function geoserver_ui_permission() {
       'description' => t('Configure a GeoServer instance.'),
     ),
   );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function geoserver_ui_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && $plugin == 'export_ui') {
+    return 'plugins/' . $plugin;
+  }
 }
