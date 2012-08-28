@@ -60,7 +60,7 @@ function geoserver_ui_layers_list() {
 
       case (geoserver_layer_type::STATUS_NOT_FOUND):
         $row[] = t('Unavailable');
-        $links[] = l(t('Create'), "admin/structure/geoserver/layers/{$layer->name}/create");
+        $links[] = l(t('Create in GeoServer'), "admin/structure/geoserver/layers/{$layer->name}/create");
         break;
     }
 
@@ -339,6 +339,7 @@ function geoserver_ui_layers_create_submit($form, &$form_state) {
     drupal_set_message(t('%layer was created.', array('%layer' => $layer->title)));
 
   } catch (geoserver_resource_exception $exc) {
+      
 
     drupal_set_message(t('Error when attempting to create %layer: %message',
         array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');

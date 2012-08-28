@@ -20,17 +20,26 @@ function geoserver_ui_admin_settings_form() {
   $workspaces = array('');
 
   if (!empty($url)) {
-    $result = geoserver_get('rest/workspaces.json');
-    if ($result->code == 200) {
+    try {
+      $result = geoserver_get('rest/workspaces.json');
       foreach ($result->data->workspaces->workspace as $ws) {
         $workspaces[$ws->name] = $ws->name;
       }
+    } catch(geoserver_resource_exception $e) {
+      drupal_set_message(t("Failed to get list of workspaces from GeoServer: !exception", array(
+        "!exception" => $e->getMessage()
+      )), 'error');
     }
+    
 
     if (!empty($workspace)) {
-      $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
-      if ($result->code == 200) {
+      try {
+        $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
         $namespace = $result->data->namespace->uri;
+      } catch(geoserver_resource_exception $e) {
+        watchdog("geoserver", t("Failed to read namespace of workspace from GeoServer: !exception", array(
+          "!exception" => $e->getMessage()
+        )));
       }
     }
   }

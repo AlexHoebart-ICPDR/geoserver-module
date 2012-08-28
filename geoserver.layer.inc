@@ -132,6 +132,21 @@ function geoserver_layer_type_load($name, $reset = FALSE) {
 
 
 class geoserver_resource_exception extends Exception {};
+class geoserver_resource_curl_exception extends geoserver_resource_exception {
+    public function __construct($curlHandle){
+        $error = curl_errno($curlHandle);
+        if($error===0){
+            // No real error but undesired status code
+            $message = t("Access to !url returned HTTP status code !code.", array(
+                "!url" => curl_getinfo($curlHandle, CURLINFO_EFFECTIVE_URL),
+                "!code" => curl_getinfo($curlHandle, CURLINFO_HTTP_CODE)
+            ));
+        } else {
+            $message = curl_errno($curlHandle)." ".curl_error($curlHandle);
+        }
+        $this->message = $message;
+    }
+}
 
 abstract class geoserver_resource {
 
@@ -193,6 +208,7 @@ abstract class geoserver_layer_type {
 
   /**
    * Export layer to remote resource definition.
+   * @return geoserver_resource
    */
   abstract function to_resource();
 
@@ -320,14 +336,25 @@ class geoserver_resource_feature_type extends geoserver_resource {
   public function read() {
 
     $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore;
-    $result = geoserver_get($url . '/featuretypes/' . $this->name . '.json');
-    if ($result->code == 200) {
+    try {
+      $result = geoserver_get($url . '/featuretypes/' . $this->name . '.json');
       $this->feature_type = $result->data;
-
+    } catch(geoserver_resource_curl_exception $e) {
+      drupal_set_message(t("Could not read feature types from data store !datastore of workspace !workspace from GeoServer: !exception", array(
+        "!datastore" => $this->datastore,
+        "!workspace" => $this->workspace,
+        "!exception" => $e->getMessage()
+      )), 'warning');
+    }
+    
+    try {
       $result = geoserver_get('rest/layers/' . $this->name . '.json');
-      if ($result->code == 200) {
-        $this->layer = $result->data;
-      }
+      $this->layer = $result->data;
+    } catch(geoserver_resource_curl_exception $e) {
+      drupal_set_message(t("Could not read layer !layer from GeoServer: !exception", array(
+        "!layer" => $this->name,
+        "!exception" => $e->getMessage()
+      )), 'warning');
     }
   }
 }
