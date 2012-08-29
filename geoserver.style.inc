@@ -77,12 +77,14 @@ function geoserver_style_status($style) {
   }
 
   $workspace = variable_get('geoserver_workspace', '');
-  $result = geoserver_get("rest/workspaces/$workspace/styles/{$style->name}.sld");
-
-  if ($result->code == 404) {
+  try {
+    $result = geoserver_get("rest/workspaces/$workspace/styles/{$style->name}.sld");
+  } catch (geoserver_resource_curl_exception $exc) {
     return GEOSERVER_STATUS_NOT_FOUND;
   }
-  elseif ($style->data == $result->data) {
+  
+
+  if ($style->data == $result->data) {
     return GEOSERVER_STATUS_FOUND_SAME;
   }
   else {
