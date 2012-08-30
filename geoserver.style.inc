@@ -76,12 +76,15 @@ function geoserver_style_status($style) {
     $style = geoserver_style_load($style);
   }
 
-  $result = geoserver_get('rest/styles/' . $style->name . '.sld');
-
-  if ($result->code == 404) {
+  $workspace = variable_get('geoserver_workspace', '');
+  try {
+    $result = geoserver_get("rest/workspaces/$workspace/styles/{$style->name}.sld");
+  } catch (geoserver_resource_curl_exception $exc) {
     return GEOSERVER_STATUS_NOT_FOUND;
   }
-  elseif ($style->data == $result->data) {
+  
+
+  if ($style->data == $result->data) {
     return GEOSERVER_STATUS_FOUND_SAME;
   }
   else {
@@ -103,7 +106,8 @@ function geoserver_style_create($style) {
     $style = geoserver_style_load($style);
   }
 
-  $result = geoserver_post('rest/styles.sld?name=' . $style->name, $style->data);
+  $workspace = variable_get('geoserver_workspace', '');
+  $result = geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
 
   if ($result->code != 201) {
     throw new Exception($result->data);
@@ -124,7 +128,7 @@ function geoserver_style_update($style) {
     $style = geoserver_style_load($style);
   }
 
-  $result = geoserver_put('rest/styles/' . $style->name . '.sld', $style->data);
+  $result = geoserver_put("rest/workspaces/$workspace/styles/{$style->name}.sld", $style->data);
 
   if ($result->code != 200) {
     throw new Exception($result->data);
@@ -145,7 +149,7 @@ function geoserver_style_delete($style) {
     $style = geoserver_style_load($style);
   }
 
-  $result = geoserver_delete('rest/styles/' . $style->name . '?purge=true');
+  $result = geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
 
   if ($result->code == 200) {
     db_delete('geoserver_styles')->condition('name', $style->name)->execute();

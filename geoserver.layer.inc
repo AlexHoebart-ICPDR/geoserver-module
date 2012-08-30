@@ -191,6 +191,7 @@ abstract class geoserver_layer_type {
   const STATUS_NOT_FOUND  = 3;
 
   public $name;
+  public $source;
 
   /**
    * Constructor.
@@ -290,13 +291,13 @@ class geoserver_resource_feature_type extends geoserver_resource {
    */
   public function create() {
 
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes';
-    $result = geoserver_post($url . '.json', $this->feature_type);
+    $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes.json";
+    $result = geoserver_post($url, $this->feature_type);
     if ($result->code != 201) {
       throw new geoserver_resource_exception("Could not create featuretype: $result->data");
     }
 
-    $result = geoserver_put('rest/layers/' . $this->name . '.json', $this->layer);
+    $result = geoserver_put("rest/layers/{$this->workspace}:{$this->name}.json", $this->layer);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update layer: $result->data");
     }
@@ -307,13 +308,13 @@ class geoserver_resource_feature_type extends geoserver_resource {
    */
   public function update() {
 
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes';
-    $result = geoserver_put($url . '/' . $this->name . '.json', $this->feature_type);
+    $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes/{$this->name}.json";
+    $result = geoserver_put($url, $this->feature_type);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update featuretypes: $result->data");
     }
 
-    $result = geoserver_put('rest/layers/' . $this->name . '.json', $this->layer);
+    $result = geoserver_put("rest/layers/{$this->workspace}:{$this->name}.json", $this->layer);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not update layer: $result->data");
     }
@@ -323,8 +324,8 @@ class geoserver_resource_feature_type extends geoserver_resource {
    * Delete remote feature type.
    */
   public function delete() {
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore . '/featuretypes';
-    $result = geoserver_delete($url . '/' . $this->name . '?recurse=true');
+    $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes/{$this->name}.json?recurse=true";
+    $result = geoserver_delete($url);
     if ($result->code != 200) {
       throw new geoserver_resource_exception("Could not delete featuretype: $result->data");
     }
@@ -335,9 +336,9 @@ class geoserver_resource_feature_type extends geoserver_resource {
    */
   public function read() {
 
-    $url = 'rest/workspaces/' . $this->workspace . '/datastores/' . $this->datastore;
+    $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes/{$this->name}.json";
     try {
-      $result = geoserver_get($url . '/featuretypes/' . $this->name . '.json');
+      $result = geoserver_get($url);
       $this->feature_type = $result->data;
     } catch(geoserver_resource_curl_exception $e) {
       drupal_set_message(t("Could not read feature types from data store !datastore of workspace !workspace from GeoServer: !exception", array(
@@ -348,7 +349,7 @@ class geoserver_resource_feature_type extends geoserver_resource {
     }
     
     try {
-      $result = geoserver_get('rest/layers/' . $this->name . '.json');
+      $result = geoserver_get("rest/layers/{$this->workspace}:{$this->name}.json");
       $this->layer = $result->data;
     } catch(geoserver_resource_curl_exception $e) {
       drupal_set_message(t("Could not read layer !layer from GeoServer: !exception", array(
