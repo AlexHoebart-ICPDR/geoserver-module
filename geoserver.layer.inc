@@ -191,7 +191,6 @@ abstract class geoserver_layer_type {
   const STATUS_NOT_FOUND  = 3;
 
   public $name;
-  public $source;
 
   /**
    * Constructor.
@@ -200,7 +199,7 @@ abstract class geoserver_layer_type {
 
     $this->workspace = variable_get('geoserver_workspace', '');
 
-    foreach (array('name', 'title', 'description', 'source', 'data', 'export_type') as $k) {
+    foreach (array('name', 'title', 'description', 'data', 'export_type') as $k) {
       if (isset($layer->{$k})) {
         $this->{$k} = $layer->{$k};
       }
@@ -260,7 +259,6 @@ abstract class geoserver_layer_type {
       'title' => $this->title,
       'description' => $this->description,
       'data' => $this->data,
-      'source' => $this->source,
     );
   }
 

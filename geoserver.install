@@ -54,26 +54,18 @@ function geoserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'default' => '',
         'description' => 'Layer name.',
       ),
       'title' => array(
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'default' => '',
         'description' => 'Layer title.',
       ),
       'description' => array(
         'type' => 'text',
         'not null' => TRUE,
         'description' => 'Layer description.',
-      ),
-      'source' => array(
-        'type' => 'text',
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Name of Drupal data source.',
       ),
       'data' => array(
         'type' => 'text',
