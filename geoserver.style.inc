@@ -82,7 +82,6 @@ function geoserver_style_status($style) {
   } catch (geoserver_resource_curl_exception $exc) {
     return GEOSERVER_STATUS_NOT_FOUND;
   }
-  
 
   if ($style->data == $result->data) {
     return GEOSERVER_STATUS_FOUND_SAME;
@@ -128,6 +127,7 @@ function geoserver_style_update($style) {
     $style = geoserver_style_load($style);
   }
 
+  $workspace = variable_get('geoserver_workspace', '');
   $result = geoserver_put("rest/workspaces/$workspace/styles/{$style->name}.sld", $style->data);
 
   if ($result->code != 200) {
@@ -149,6 +149,7 @@ function geoserver_style_delete($style) {
     $style = geoserver_style_load($style);
   }
 
+  $workspace = variable_get('geoserver_workspace', '');
   $result = geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
 
   if ($result->code == 200) {

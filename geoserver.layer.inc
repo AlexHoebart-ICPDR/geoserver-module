@@ -267,15 +267,6 @@ abstract class geoserver_layer_type {
    *   Success value on saving this layer
    */
   function save() {
-    if (!empty($this->name)) {
-      return (db_select('geoserver_layers')
-          ->fields('geoserver_layers', array('name'))
-          ->condition('name', $this->name)
-          ->execute()
-          ->fetchCol()) ?
-        drupal_write_record('geoserver_layers', $this->to_record(), 'name') :
-        drupal_write_record('geoserver_layers', $this->to_record());
-    }
   }
 }
 

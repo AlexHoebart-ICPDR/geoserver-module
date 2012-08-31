@@ -27,18 +27,10 @@ class geoserver_layers_ui extends ctools_export_ui {
 
       case (GEOSERVER_STATUS_FOUND_DIFF):
         $status = t('Different');
-        $operations['update'] = array(
-          'title' => 'Update',
-          'href' => "admin/structure/geoserver/layers/list/{$item->name}/update",
-        );
         break;
 
       case (GEOSERVER_STATUS_NOT_FOUND):
         $status = t('Unavailable');
-        $operations['create'] = array(
-          'title' => 'Create',
-          'href' => "admin/structure/geoserver/layers/list/{$item->name}/create",
-        );
         break;
     }
 
@@ -117,26 +109,6 @@ class geoserver_layers_ui extends ctools_export_ui {
     parent::hook_menu($items);
 
     $items['admin/structure/geoserver/layers']['type'] = MENU_LOCAL_TASK;
-
-    $items['admin/structure/geoserver/layers/list/%ctools_export_ui/update'] = array(
-      'title' => 'Update Layer',      
-      'description' => 'Update GeoServer Layer.',
-      'page callback' => 'ctools_export_ui_switcher_page',
-      'page arguments' => array('geoserver_layers_ctools_export_ui', 'update', 5),
-      'load arguments' =>  array('geoserver_layers_ctools_export_ui'),
-      'access arguments' => array('administer geoserver'),
-      'type' => MENU_NORMAL_ITEM,
-    );
-
-    $items['admin/structure/geoserver/layers/list/%ctools_export_ui/create'] = array(
-      'title' => 'Create Layer',
-      'description' => 'Create GeoServer Layer.',
-      'page callback' => 'ctools_export_ui_switcher_page',
-      'page arguments' => array('geoserver_layers_ctools_export_ui', 'create', 5),
-      'load arguments' =>  array('geoserver_layers_ctools_export_ui'),
-      'access arguments' => array('administer geoserver'),
-      'type' => MENU_NORMAL_ITEM,
-    );
   }
 
   /**
@@ -173,7 +145,30 @@ class geoserver_layers_ui extends ctools_export_ui {
     parent::edit_form_submit($form, $form_state);
 
     $layer = geoserver_get_layer_object($form_state['item']);
-    //$layer->save();
+    $layer->save();
+
+    if ($layer->get_status() == GEOSERVER_STATUS_NOT_FOUND) {
+
+      try {
+        $resource = $layer->to_resource();
+        $result = $resource->create();
+
+      } catch (geoserver_resource_exception $exc) {
+        drupal_set_message(t('Error when attempting to create %layer: %message',
+            array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
+      }
+
+    } else {
+
+      try {
+        $resource = $layer->to_resource();
+        $resource->update();
+
+      } catch (geoserver_resource_exception $exc) {
+        drupal_set_message(t('Error when attempting to update %layer: %message',
+            array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
+      }
+    }
   }
 
   function delete_form_submit(&$form_state) {
@@ -183,124 +178,14 @@ class geoserver_layers_ui extends ctools_export_ui {
     try {
       $resource = $layer->to_resource();
       $resource->delete();
+      parent::delete_form_submit($form_state);
 
     } catch (geoserver_resource_exception $exc) {
 
       drupal_set_message(t('Error when attempting to delete %layer: %message',
           array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
     }
-
-    parent::delete_form_submit($form_state);
   }
-
-  function update_page($js, $input, $item, $step = NULL) {
-
-    $form_state = array('object' => &$this, 'item' => $item);
-    return drupal_build_form('geoserver_layers_ui_update_form', $form_state);
-  }
-
-  function update_form(&$form, &$form_state) {
-
-    $layer = $form_state['item'];
-    $form = array('layer' => array('#type' => 'value', '#value' => $layer));
-    $message = t('Are you sure you want to update %layer?', array('%layer' => $layer->title));
-    $form = confirm_form($form, $message, 'admin/structure/geoserver/layers');
-  }
-
-  /**
-   * Submit callback for layer update form.
-   */
-  function update_form_submit($form, &$form_state) {
-
-    $layer = geoserver_get_layer_object($form_state['values']['layer']);
-    try {
-      $resource = $layer->to_resource();
-      $resource->update();
-      drupal_set_message(t('%layer was updated.', array('%layer' => $layer->title)));
-    } catch (geoserver_resource_exception $exc) {
-      drupal_set_message(t('Error when attempting to update %layer: %message',
-          array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
-    }
-
-    // Redirect.
-    $form_state['redirect'] = 'admin/structure/geoserver/layers';
-  }
-
-  function create_page($js, $input, $item, $step = NULL) {
-
-    $form_state = array('object' => &$this, 'item' => $item);
-    return drupal_build_form('geoserver_layers_ui_create_form', $form_state);
-  }
-
-  /**
-   * Layer create form.
-   */
-  function create_form(&$form, &$form_state) {
-
-    $layer = $form_state['item'];
-
-    // Create create form.
-    $form = array('layer' => array('#type' => 'value', '#value' => $layer));
-    $message = t('Are you sure you want to create %layer?', array('%layer' => $layer->title));
-    $form = confirm_form($form, $message, 'admin/structure/geoserver/layers');
-  }
-
-  /**
-   * Submit callback for layer create form.
-   */
-  function create_form_submit($form, &$form_state) {
-
-    $layer = geoserver_get_layer_object($form_state['values']['layer']);
-
-    try {
-
-      $resource = $layer->to_resource();
-      $result = $resource->create();
-      drupal_set_message(t('%layer was created.', array('%layer' => $layer->title)));
-
-    } catch (geoserver_resource_exception $exc) {
-        
-
-      drupal_set_message(t('Error when attempting to create %layer: %message',
-          array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
-    }
-
-    $form_state['redirect'] = 'admin/structure/geoserver/layers';
-  }
-}
-
-/**
- * Form callback to edit an exportable item.
- *
- * This simply loads the object defined in the plugin and hands it off.
- */
-function geoserver_layers_ui_update_form($form, &$form_state) {
-  $form_state['object']->update_form($form, $form_state);
-  return $form;
-}
-
-/**
- * Submit handler for ctools_export_ui_edit_item_form.
- */
-function geoserver_layers_ui_update_form_submit(&$form, &$form_state) {
-  $form_state['object']->update_form_submit($form, $form_state);
-}
-
-/**
- * Form callback to edit an exportable item.
- *
- * This simply loads the object defined in the plugin and hands it off.
- */
-function geoserver_layers_ui_create_form($form, &$form_state) {
-  $form_state['object']->create_form($form, $form_state);
-  return $form;
-}
-
-/**
- * Submit handler for ctools_export_ui_edit_item_form.
- */
-function geoserver_layers_ui_create_form_submit(&$form, &$form_state) {
-  $form_state['object']->create_form_submit($form, $form_state);
 }
 
 /**
