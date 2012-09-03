@@ -269,8 +269,14 @@ abstract class geoserver_layer_type {
 }
 
 class geoserver_resource_feature_type extends geoserver_resource {
-
+  /**
+   * @var array
+   */
   public $feature_type;
+  
+  /**
+   * @var array
+   */
   public $layer;
 
   /**
