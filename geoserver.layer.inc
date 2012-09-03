@@ -373,6 +373,7 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
         'name' => $this->name,
         'type' => 'VECTOR',
         'defaultStyle' => array(
+          'workspace' => $this->workspace,
           'name' => $this->data['style'],
         ),
         'resource' => array(
