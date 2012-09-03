@@ -93,8 +93,10 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
 
     foreach ($layer_types as $layer_type) {
 
+      $layer_type_name = $layer_type['name'];
+
       if (!$layer) {
-        $layer = geoserver_layer_type_load($layer_type['name']);
+        $layer = geoserver_layer_type_load($layer_type_name);
       }
 
       $layers_option = array(
@@ -105,7 +107,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
 
       $layers_option['type'] = array(
         '#type' => 'hidden',
-        '#value' => $layer_type['name'],
+        '#value' => $layer_type_name,
       );
 
       $layers_option['style'] = array(
@@ -119,12 +121,12 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
       $layers_option['source'] = array(
         '#type' => 'select',
         '#title' => t('Source'),
-        '#options' => $layer_type['name']::get_sources(),
+        '#options' => $layer_type_name::get_sources(),
         '#default_value' => isset($layer->data['source']) ? $layer->data['source'] : '',
         '#description' => t('Please select a source for this layer.'),
         '#ajax' => array(
           'callback' => 'geoserver_layers_ui_type_form',
-          'wrapper' => $layer_type['name'],
+          'wrapper' => $layer_type_name,
         ),
       );
 
@@ -156,7 +158,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
           '#default_value' => isset($openlayers['gwc_srs']) ? $openlayers['gwc_srs'] : '',
           '#states' => array(
             'visible' => array(
-              ':input[name="' . $layer_type['name'] . '[openlayers][gwc]"]' => array(
+              ':input[name="' . $layer_type_name . '[openlayers][gwc]"]' => array(
                 'checked' => TRUE,
               ),
             ),
@@ -177,7 +179,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
           '#default_value' => isset($openlayers['wms_srs']) ? $openlayers['wms_srs'] : '',
           '#states' => array(
             'visible' => array(
-              ':input[name="' . $layer_type['name'] . '[openlayers][wms]"]' => array(
+              ':input[name="' . $layer_type_name . '[openlayers][wms]"]' => array(
                 'checked' => TRUE,
               ),
             ),
@@ -197,12 +199,12 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
         $layers_option['options'] += $layer->options_form();
         $layers_option['#states'] = array(
           'visible' => array(
-            ':input[name="layer_type"]' => array('value' => $layer_type['name']),
+            ':input[name="layer_type"]' => array('value' => $layer_type_name),
           ),
         );
-        $layers_options[$layer_type['name']] = $layers_option;
+        $layers_options[$layer_type_name] = $layers_option;
       }
-      $layer_type_options[$layer_type['name']] = $layer_type['title'];
+      $layer_type_options[$layer_type_name] = $layer_type['title'];
     }
 
     $form['layer']['layer_type'] = array(
