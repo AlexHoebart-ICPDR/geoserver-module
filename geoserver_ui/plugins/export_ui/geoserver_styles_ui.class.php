@@ -17,20 +17,6 @@ class geoserver_styles_ui extends ctools_export_ui {
     $name = $item->{$this->plugin['export']['key']};
     $schema = ctools_export_get_schema($this->plugin['schema']);
 
-    switch (geoserver_style_status($item)) {
-      case (GEOSERVER_STATUS_FOUND_SAME):
-        $status = t('Same');
-        break;
-
-      case (GEOSERVER_STATUS_FOUND_DIFF):
-        $status = t('Different');
-        break;
-
-      case (GEOSERVER_STATUS_NOT_FOUND):
-        $status = t('Unavailable');
-        break;
-    }
-
     // Note: $item->{$schema['export']['export type string']} should have already been set up by export.inc so
     // we can use it safely.
     switch ($form_state['values']['order']) {
@@ -42,9 +28,6 @@ class geoserver_styles_ui extends ctools_export_ui {
         break;
       case 'name':
         $this->sorts[$name] = $name;
-        break;
-      case 'geoserver':
-        $this->sorts[$name] = $status;
         break;
       case 'storage':
         $this->sorts[$name] = $item->{$schema['export']['export type string']} . $name;
@@ -62,7 +45,6 @@ class geoserver_styles_ui extends ctools_export_ui {
     $this->rows[$name]['data'][] = array('data' => $item->title, 'class' => array('ctools-export-ui-title'));
     $this->rows[$name]['data'][] = array('data' => $item->description, 'class' => array('ctools-export-ui-description'));
     $this->rows[$name]['data'][] = array('data' => check_plain($item->{$schema['export']['export type string']}), 'class' => array('ctools-export-ui-storage'));
-    $this->rows[$name]['data'][] = array('data' => $status, 'class' => array('ctools-export-ui-geoserver'));
 
     $ops = theme('links__ctools_dropbutton', array('links' => $operations, 'attributes' => array('class' => array('links', 'inline'))));
 
@@ -90,7 +72,6 @@ class geoserver_styles_ui extends ctools_export_ui {
     $header[] = array('data' => t('Title'), 'class' => array('ctools-export-ui-title'));
     $header[] = array('data' => t('Description'), 'class' => array('ctools-export-ui-description'));
     $header[] = array('data' => t('Storage'), 'class' => array('ctools-export-ui-storage'));
-    $header[] = array('data' => t('Geoserver'), 'class' => array('ctools-export-ui-geoserver'));
     $header[] = array('data' => t('Operations'), 'class' => array('ctools-export-ui-operations'));
 
     return $header;
