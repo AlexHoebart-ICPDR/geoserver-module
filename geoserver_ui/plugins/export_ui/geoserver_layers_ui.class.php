@@ -129,7 +129,7 @@ class geoserver_layers_ui extends ctools_export_ui {
 
       try {
         $resource = $layer->to_resource();
-        $result = $resource->create();
+        $resource->create();
 
       } catch (geoserver_resource_exception $exc) {
         drupal_set_message(t('Error when attempting to create %layer: %message',

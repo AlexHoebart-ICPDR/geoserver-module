@@ -32,7 +32,6 @@ function geoserver_layers_load($reset = FALSE) {
   }
 
   $layers = ctools_export_load_object('geoserver_layers', 'all', array());
-  $layer_types = geoserver_layer_types();
 
   foreach ($layers as $index => $layer) {
     $layer_object = geoserver_get_layer_object($layer);
@@ -64,7 +63,6 @@ function geoserver_layer_load($name, $reset = FALSE) {
     ctools_export_load_object_reset('geoserver_layers');
   }
   $layers = ctools_export_load_object('geoserver_layers', 'names', array($name));
-  $layer_types = geoserver_layer_types();
 
   if (isset($layers[$name])) {
     return geoserver_get_layer_object($layers[$name]);
