@@ -135,22 +135,24 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
         $layers_option['openlayers'] = array(
           '#type' => 'fieldset',
           '#title' => t('OpenLayers'),
+          '#description' => t('Select how you want to have this layer available in maps of the OpenLayers module. Note that raster data is only available for inclusion in the OpenLayers module if the projection chosen here matches the OpenLayers map in question.'),
         );
         $layers_option['openlayers']['wfs'] = array(
           '#type' => 'checkbox',
           '#title' => t('Provide an OpenLayers WFS layer.'),
           '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '',
+          '#description' => t('This makes your layer\'s content available as vector data.'),
         );
         $layers_option['openlayers']['gwc'] = array(
           '#type' => 'checkbox',
           '#title' => t('Provide a cached OpenLayers WMS layer.'),
           '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '',
+          '#description' => t('Creates a layer that transmits its data using several small adjacent images.'),
         );
         // TODO: merge *_srs fields, depends on Drupal 7.13
         // Conditional visibility: http://drupal.org/node/1464758
         $layers_option['openlayers']['gwc_srs'] = array(
           '#type' => 'select',
-          '#title' => t('Projection'),
           '#options' => array(
             'EPSG:4326' => '4326',
             'EPSG:900913' => '900913',
@@ -163,15 +165,18 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
               ),
             ),
           ),
+          '#description' => t('Choose projection of the generated raster graphics. This should match the projection of any other layers that you want to use in combination with your layer. Select 900913 if you intend to overlay your layer on maps by other providers such as OpenStreetMap, Google, Bing or MapQuest.'),
+          '#prefix' => '<div style="padding-left:20px">',
+          '#suffix' => '</div>',
         );
         $layers_option['openlayers']['wms'] = array(
           '#type' => 'checkbox',
           '#title' => t('Provide an untiled OpenLayers WMS layer.'),
           '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '',
+          '#description' => t('Creates a layer that transmits its data using one image that spans the entire map.'),
         );
         $layers_option['openlayers']['wms_srs'] = array(
           '#type' => 'select',
-          '#title' => t('Projection'),
           '#options' => array(
             'EPSG:4326' => '4326',
             'EPSG:900913' => '900913',
@@ -184,6 +189,9 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
               ),
             ),
           ),
+          '#description' => t('Choose projection of the generated raster graphics. This should match the projection of any other layers that you want to use in combination with your layer. Select 900913 if you intend to overlay your layer on maps by other providers such as OpenStreetMap, Google, Bing or MapQuest.'),
+          '#prefix' => '<div style="padding-left:20px">',
+          '#suffix' => '</div>',
         );
       }
 
