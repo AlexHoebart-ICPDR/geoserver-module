@@ -28,8 +28,8 @@ function geoserver_openlayers_layers() {
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_gwc';
       $ol_layer->title = $gs_layer->title;
-      $ol_layer->description = t('Cached WMS layer of GeoServer layer %name',
-          array('%name' => $gs_layer->name));
+      $ol_layer->description = t('Cached WMS layer of GeoServer layer !name',
+          array('!name' => $gs_layer->name));
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'gwc/service/wms',
@@ -58,8 +58,8 @@ function geoserver_openlayers_layers() {
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_wfs';
       $ol_layer->title = $gs_layer->title;
-      $ol_layer->description = t('WFS layer of GeoServer layer %name',
-          array('%name' => $gs_layer->name));
+      $ol_layer->description = t('WFS layer of GeoServer layer !name',
+          array('!name' => $gs_layer->name));
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_geoserver_wfs',
         'sld' => $sld,
@@ -77,8 +77,8 @@ function geoserver_openlayers_layers() {
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_wms';
       $ol_layer->title = $gs_layer->title;
-      $ol_layer->description = t('Untiled WMS layer of GeoServer layer %name',
-          array('%name' => $gs_layer->name));
+      $ol_layer->description = t('Untiled WMS layer of GeoServer layer !name',
+          array('!name' => $gs_layer->name));
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'wms',
