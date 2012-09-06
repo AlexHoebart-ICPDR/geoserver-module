@@ -21,7 +21,7 @@ define('GEOSERVER_STATUS_NOT_FOUND', 3);
  */
 function geoserver_cron() {
   if (time() >= variable_get('geoserver_next_execution', 0)) {
-    $users = db_query('SELECT uid FROM {sessions} WHERE uid != 0')->fetchAll(PDO::FETCH_COLUMN);
+    $users = db_query('SELECT uid FROM {sessions} WHERE uid <> 0')->fetchAll(PDO::FETCH_COLUMN);
     foreach ($users as $uid) {
       geoserver_get('web/', $uid);
     }
@@ -95,11 +95,11 @@ function geoserver_login($username, $password) {
   
   // Let other modules know the a login into GeoServer is going to happen and allow them to map the username to something else
   $modfiedUserNames = array_unique(module_invoke_all('geoserver_modify_login', $username));
-  if(count($modfiedUserNames)>1){
+  if (count($modfiedUserNames)>1) {
     // Abort due to ambiguity of alterations
     throw new Exception("Cannot log in user name since different modifications have been requested for GeoServer login.");
   }
-  if(count($modfiedUserNames)===1){
+  if (count($modfiedUserNames)===1) {
     $username = $modfiedUserNames[0];
   }
 
@@ -138,15 +138,17 @@ function geoserver_login($username, $password) {
     $expire = ini_get('session.cookie_lifetime') ? time()+ini_get('session.cookie_lifetime') : 0;
     if (setcookie('JSESSIONID', $cookies['JSESSIONID'], $expire, $url['path'], $url['host'])) {
       return TRUE;
-    } else {
+    } 
+    else {
       return t('Unable to set Cookie.');
     }
   }
-  else if(isset($cookies['JSESSIONID'])) {
+  elseif (isset($cookies['JSESSIONID'])) {
 
     return t('Wrong user credentials.');
 
-  } else {
+  } 
+  else {
 
     return t('Could not contact GeoServer at @login_url (@http_code).', 
       array('@login_url' => $login_url, '@http_code' => $http_code));
@@ -362,13 +364,13 @@ function geoserver_get($url, $uid = NULL) {
   $result = new stdClass();
   $result->url = $url;
   $result->data = curl_exec($request);
-  if($result->data===FALSE){
+  if ($result->data===FALSE) {
     $e = new geoserver_resource_curl_exception($request);
     curl_close($request);
     throw $e;
   }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-  if($result->code<200 || $result->code>299){
+  if ($result->code<200 || $result->code>299) {
     $e = new geoserver_resource_curl_exception($request);
     curl_close($request);
     throw $e;
