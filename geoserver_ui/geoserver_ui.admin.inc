@@ -23,14 +23,14 @@ function geoserver_ui_admin_settings_form() {
     try {
       $result = geoserver_get('rest/workspaces.json');
       // Only use data if it is an array to take account for GeoServer sending an empty string instead of an empty array
-      if(is_array($result->data->workspaces->workspace)){
+      if (is_array($result->data->workspaces->workspace)) {
         foreach ($result->data->workspaces->workspace as $ws) {
           $workspaces[$ws->name] = $ws->name;
         }
       }
-    } catch(geoserver_resource_exception $e) {
-      drupal_set_message(t("Failed to get list of workspaces from GeoServer: !exception", array(
-        "!exception" => $e->getMessage()
+    } catch (geoserver_resource_exception $e) {
+      drupal_set_message(t("Failed to get list of workspaces from GeoServer: @exception", array(
+        "@exception" => $e->getMessage()
       )), 'error');
     }
     
@@ -39,9 +39,9 @@ function geoserver_ui_admin_settings_form() {
       try {
         $result = geoserver_get('rest/namespaces/' . $workspace . '.json');
         $namespace = $result->data->namespace->uri;
-      } catch(geoserver_resource_exception $e) {
-        drupal_set_message(t("Failed to read namespace of workspace from GeoServer: !exception", array(
-          "!exception" => $e->getMessage()
+      } catch (geoserver_resource_exception $e) {
+        drupal_set_message(t("Failed to read namespace of workspace from GeoServer: @exception", array(
+          "@exception" => $e->getMessage()
         )), 'error');
       }
     }

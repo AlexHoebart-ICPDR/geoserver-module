@@ -1,7 +1,9 @@
 <?php
 /**
- * Define this Export UI plugin.
+ * @file
+ * Define the Export UI plugin for GeoServer Layers.
  */
+
 $plugin = array(
   'schema' => 'geoserver_layers',
   'access' => 'administer geoserver',
