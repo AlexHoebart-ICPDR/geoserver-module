@@ -17,7 +17,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
     buffer: 0,
     styleMap: new OpenLayers.StyleMap(),
     protocol: new OpenLayers.Protocol.Script({
-      url: options.protocol.url,
+      url: options.url,
       callbackKey: 'format_options',
       callbackPrefix: 'callback:',
       params: {
@@ -25,7 +25,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         version: '1.0.0',
         request: 'GetFeature',
         // typeName equals layer name
-        typeName: options.protocol.typeName,
+        typeName: options.typeName,
         outputFormat: 'json',
         srsName: 'EPSG:'+map.projection
       },

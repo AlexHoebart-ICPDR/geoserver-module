@@ -63,11 +63,8 @@ function geoserver_openlayers_layers() {
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_geoserver_wfs',
         'sld' => $sld,
-        'protocol' => array(
-          'url' => $url . 'wfs',
-          'typeName' => $gs_layer->name,
-          'featureNS' => variable_get('geoserver_namespace', ''),
-        ),
+        'url' => $url . $workspace . '/ows',
+        'typeName' => $workspace . ':' . $gs_layer->name,
       );
       $ol_layers[$ol_layer->name] = $ol_layer;
     }

@@ -39,13 +39,18 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
    * Provide initial values for options.
    */
   function options_init() {
+
+    $url = variable_get('geoserver_url', '');
+    $workspace = variable_get('geoserver_workspace', '');
+
     return array(
       'layer_type' => 'openlayers_layer_type_geoserver_wfs',
       'layer_handler' => 'openlayers_layer_type_geoserver_wfs',
-      'geoserver_url' => variable_get('geoserver_url', ''),
+      'url' => $url . $workspace . '/ows',
       'projection' => array('4326', '900913'),
       'baselayer' => FALSE,
-      'typeName' => '', 'vector' => TRUE,
+      'typeName' => '', 
+      'vector' => TRUE,
       'formatOptions' => array(
         'extractStyles' => TRUE,
         'extractAttributes' => TRUE,
@@ -58,23 +63,19 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
    */
   function options_form($defaults = array()) {
     return array(
-      'protocol' => array(
-        'url' => array(
-          '#type' => 'textfield',
-          '#title' => t('URL'),
-          '#description' => t('The URL of the WFS server. For example: http://your_hostname/geoserver/your_workspace_name/ows'),
-          '#maxlength' => 1024,
-          '#default_value' => isset($this->data['protocol']['url']) ?
-              $this->data['protocol']['url'] : ''
-        ),
-        'typeName' => array(
-          '#type' => 'textfield',
-          '#title' => t('Type Name'),
-          '#description' => t('The typename of the features requested. Equals the layer name in GeoServer.'),
-          '#maxlength' => 100,
-          '#default_value' => isset($this->data['protocol']['typeName']) ?
-              $this->data['protocol']['typeName'] : ''
-        ),
+      'url' => array(
+        '#type' => 'textfield',
+        '#title' => t('URL'),
+        '#description' => t('The URL of the WFS server. For example: http://your_hostname/geoserver/your_workspace_name/ows'),
+        '#maxlength' => 1024,
+        '#default_value' => isset($this->data['url']) ? $this->data['url'] : ''
+      ),
+      'typeName' => array(
+        '#type' => 'textfield',
+        '#title' => t('Type Name'),
+        '#description' => t('The typename of the features requested. Equals the layer name in GeoServer.'),
+        '#maxlength' => 100,
+        '#default_value' => isset($this->data['typeName']) ? $this->data['typeName'] : ''
       ),
       'sld' => array(
         '#type' => 'textarea',
