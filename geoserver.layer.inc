@@ -229,21 +229,21 @@ abstract class geoserver_layer_type {
   function get_status() {
 
     $resource = new geoserver_resource_feature_type($this->name, $this->datastore);
-    $resource->read();
+
+    try {
+      $resource->read();
+    } catch (geoserver_resource_exception $exc) {
+      return geoserver_layer_type::STATUS_NOT_FOUND;
+    }
 
     $remote = clone $this;
     $remote->from_resource($resource);
 
-    if (!empty($remote->name)) {
-      if ($this->to_record() != $remote->to_record()) {
-        return geoserver_layer_type::STATUS_FOUND_DIFF;
-      }
-      else {
-        return geoserver_layer_type::STATUS_FOUND_SAME;
-      }
+    if ($this->to_record() != $remote->to_record()) {
+      return geoserver_layer_type::STATUS_FOUND_DIFF;
     }
     else {
-      return geoserver_layer_type::STATUS_NOT_FOUND;
+      return geoserver_layer_type::STATUS_FOUND_SAME;
     }
   }
 
@@ -334,22 +334,23 @@ class geoserver_resource_feature_type extends geoserver_resource {
     try {
       $result = geoserver_get($url);
       $this->feature_type = $result->data;
-    } catch (geoserver_resource_curl_exception $e) {
-      drupal_set_message(t("Could not read feature types from data store @datastore of workspace @workspace from GeoServer: @exception", array(
-        "@datastore" => $this->datastore,
-        "@workspace" => $this->workspace,
-        "@exception" => $e->getMessage()
-      )), 'warning');
+    } catch (geoserver_resource_curl_exception $exc) {
+      throw new geoserver_resource_exception(
+        t("Could not read feature types from data store @datastore of workspace @workspace from GeoServer: @exception", array(
+          "@datastore" => $this->datastore,
+          "@workspace" => $this->workspace,
+          "@exception" => $exc->getMessage()
+        )));
     }
     
     try {
       $result = geoserver_get("rest/layers/{$this->workspace}:{$this->name}.json");
       $this->layer = $result->data;
-    } catch (geoserver_resource_curl_exception $e) {
-      drupal_set_message(t("Could not read layer @layer from GeoServer: @exception", array(
+    } catch (geoserver_resource_curl_exception $exc) {
+      throw new geoserver_resource_exception(t("Could not read layer @layer from GeoServer: @exception", array(
         "@layer" => $this->name,
-        "@exception" => $e->getMessage()
-      )), 'warning');
+        "@exception" => $exc->getMessage()
+      )));
     }
   }
 }
