@@ -161,7 +161,11 @@ function geoserver_user_logout($account) {
   $url = parse_url(variable_get('geoserver_url', ''));
   $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
-  unlink(geoserver_get_cookiefile());
+
+  $cookiefile = geoserver_get_cookiefile();
+  if (file_exists($cookiefile)) {
+    @unlink($cookiefile);
+  }
 }
 
 /**
