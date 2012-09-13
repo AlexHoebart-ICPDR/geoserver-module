@@ -223,16 +223,16 @@ function geoserver_truncate($node) {
 
       $message = '<?xml version="1.0" encoding="UTF-8"?>
                   <seedRequest>
-                    <name>' . $layer . '</name>
+                    <name>' . htmlspecialchars($layer) . '</name>
                     <bounds>
                       <coords>
-                        <double>' . $bbox[0] . '</double>
-                        <double>' . $bbox[1] . '</double>
-                        <double>' . $bbox[2] . '</double>
-                        <double>' . $bbox[3] . '</double>
+                        <double>' . htmlspecialchars((string)$bbox[0]) . '</double>
+                        <double>' . htmlspecialchars((string)$bbox[1]) . '</double>
+                        <double>' . htmlspecialchars((string)$bbox[2]) . '</double>
+                        <double>' . htmlspecialchars((string)$bbox[3]) . '</double>
                       </coords>
                     </bounds>
-                    <gridSetId>' . $settings['gwc_srs'] . '</gridSetId>
+                    <gridSetId>' . htmlspecialchars((string)$settings['gwc_srs']) . '</gridSetId>
                     <zoomStart>0</zoomStart>
                     <zoomStop>20</zoomStop>
                     <format>image/png</format>
