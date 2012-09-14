@@ -43,18 +43,6 @@ function geoserver_ui_menu() {
 }
 
 /**
- * Implements hook_permission().
- */
-function geoserver_ui_permission() {
-  return array(
-    'administer geoserver' => array(
-      'title' => t('Administer GeoServer'),
-      'description' => t('Configure a GeoServer instance.'),
-    ),
-  );
-}
-
-/**
  * Implements hook_ctools_plugin_directory().
  */
 function geoserver_ui_ctools_plugin_directory($module, $plugin) {

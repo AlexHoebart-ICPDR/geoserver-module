@@ -14,6 +14,26 @@ define('GEOSERVER_STATUS_FOUND_DIFF', 2);
 define('GEOSERVER_STATUS_NOT_FOUND', 3);
 
 /**
+ * Implements hook_permission().
+ */
+function geoserver_permission() {
+  $layers = geoserver_layers_load(TRUE);
+  $permissions = array(
+    'administer geoserver' => array(
+      'title' => t('Administer GeoServer'),
+      'description' => t('Configure a GeoServer instance.'),
+    ),
+  );
+
+  foreach ($layers as $layer) {
+    $permissions['read ' . $layer->name] = array('title' => t('%title: View any content', array('%title' => $layer->title)));
+    $permissions['write ' . $layer->name] = array('title' => t('%title: Edit any content', array('%title' => $layer->title)));
+  }
+
+  return $permissions;
+}
+
+/**
  * Implements hook_cron().
  *
  * Access web interface of GeoServer every hour
