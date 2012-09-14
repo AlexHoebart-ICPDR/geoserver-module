@@ -34,6 +34,9 @@ function geoserver_ui_admin_settings_form() {
     }
   }
 
+  $styles = geoserver_styles();
+  $layers = geoserver_layers_load();
+
   $form = array(
     'geoserver_url' => array(
       '#type' => 'textfield',
@@ -44,9 +47,10 @@ function geoserver_ui_admin_settings_form() {
     'geoserver_workspace' => array(
       '#type' => 'select',
       '#title' => t('GeoServer Workspace'),
-      '#description' => t('The workspace where all layers and styles will be stored.'),
+      '#description' => t('The workspace where all layers and styles will be stored. Only changeable as long as the list of layers and styles is empty.'),
       '#options' => $workspaces,
       '#default_value' => $workspace,
+      '#disabled' => !(empty($layers) && empty($styles)),
     ),
   );
   $form['submit'] = array(
