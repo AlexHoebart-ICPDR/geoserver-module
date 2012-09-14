@@ -26,8 +26,10 @@ function geoserver_permission() {
   );
 
   foreach ($layers as $layer) {
-    $permissions['read ' . $layer->name] = array('title' => t('%title: View any content', array('%title' => $layer->title)));
-    $permissions['write ' . $layer->name] = array('title' => t('%title: Edit any content', array('%title' => $layer->title)));
+    $permissions['read layer ' . $layer->name] = array('title' =>
+      t('%title: View any content', array('%title' => $layer->title)));
+    $permissions['write layer ' . $layer->name] = array('title' =>
+      t('%title: Edit any content', array('%title' => $layer->title)));
   }
 
   return $permissions;
