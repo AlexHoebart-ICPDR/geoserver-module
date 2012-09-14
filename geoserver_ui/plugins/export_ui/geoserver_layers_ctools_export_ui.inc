@@ -32,10 +32,16 @@ $plugin = array(
   'strings' => array(
     'confirmation' => array(
       'add' => array(
-        'success' => t('Layer saved.'),
+        'success' => t('Layer added.'),
+        'fail' => t('Failed to completely add layer. See the log for details.'),
+      ),
+      'edit' => array(
+        'success' => t('Layer updated.'),
+        'fail' => t('Failed to completely update layer. See the log for details.'),
       ),
       'delete' => array(
         'success' => t('Layer was deleted.'),
+        'fail' => t('Failed to completely delete layer. See the log for details.'),
       )
     )
   ),

@@ -73,6 +73,92 @@ function geoserver_layer_load($name, $reset = FALSE) {
   }
 }
 
+function geoserver_layer_save(&$object) {
+  $source = explode('.', $object->data['source']);
+  $update = ($object->export_type & EXPORT_IN_DATABASE) ? array('name') : array();
+  $object->export_type = EXPORT_IN_DATABASE;
+  $result = drupal_write_record('geoserver_layers', $object, $update);
+
+  if (!$result) {
+    return FALSE;
+  }
+
+  $layer = geoserver_get_layer_object($object);
+  $layer->save();
+
+  if (empty($update) && $source[0] != 'node') {
+    // Grant permissions derived from source.
+    // Only for new node based layers for now.
+    $roles = user_roles();
+    $role_permissons = user_role_permissions($roles);
+    foreach ($role_permissons as $rid => $permissons) {
+      $readable = $editable = $createable = $bypass = FALSE;
+      foreach ($permissons as $permission => $status) {
+        if ($permission == 'view any ' . $source[1] . ' content') {
+          $readable = TRUE;
+        }
+        elseif ($permission == 'edit any ' . $source[1] . ' content') {
+          $editable = TRUE;
+        }
+        elseif ($permission == 'create ' . $source[1] . ' content') {
+          $createable = TRUE;
+        }
+        elseif ($permission == 'bypass node access') {
+          $bypass = TRUE;
+        }
+      }
+      if ($readable) {
+        user_role_grant_permissions($rid, array('read ' . $layer->name));
+      }
+      if (($editable && $createable) || $bypass) {
+        user_role_grant_permissions($rid, array('write ' . $layer->name));
+      }
+    }
+  }
+
+  if ($layer->get_status() == GEOSERVER_STATUS_NOT_FOUND) {
+    try {
+      $resource = $layer->to_resource();
+      $resource->create();
+    } catch (geoserver_resource_exception $exc) {
+      watchdog('geoserver', 'Error when attempting to create %layer: %message', 
+        array('%layer' => $layer->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  } else {
+    try {
+      $resource = $layer->to_resource();
+      $resource->update();
+    } catch (geoserver_resource_exception $exc) {
+      watchdog('geoserver', 'Error when attempting to update %layer: %message', 
+        array('%layer' => $layer->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+function geoserver_layer_delete(&$object) {
+  $layer = geoserver_get_layer_object($object);
+  $result = db_delete('geoserver_layers')
+    ->condition('name', is_object($object) ? $object->name : $object)
+    ->execute();
+
+  if (!$result) {
+    return FALSE;
+  }
+
+  try {
+    $resource = $layer->to_resource();
+    $resource->delete();
+  } catch (geoserver_resource_exception $exc) {
+    watchdog('geoserver', 'Error when attempting to delete %layer: %message',
+      array('%layer' => $layer->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+    // Note: ctools doesn't take FALSE return values of delete callbacks into account yet.
+    return FALSE;
+  }
+}
+
 /**
  * Get layer object
  *

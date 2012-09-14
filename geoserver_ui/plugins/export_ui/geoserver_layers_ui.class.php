@@ -121,48 +121,6 @@ class geoserver_layers_ui extends ctools_export_ui {
   function edit_form_submit(&$form, &$form_state) {
     $form_state['values']['data'] = $form_state['values'][$form_state['values']['layer_type']];
     parent::edit_form_submit($form, $form_state);
-
-    $layer = geoserver_get_layer_object($form_state['item']);
-    $layer->save();
-
-    if ($layer->get_status() == GEOSERVER_STATUS_NOT_FOUND) {
-
-      try {
-        $resource = $layer->to_resource();
-        $resource->create();
-
-      } catch (geoserver_resource_exception $exc) {
-        drupal_set_message(t('Error when attempting to create %layer: %message',
-            array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
-      }
-
-    } else {
-
-      try {
-        $resource = $layer->to_resource();
-        $resource->update();
-
-      } catch (geoserver_resource_exception $exc) {
-        drupal_set_message(t('Error when attempting to update %layer: %message',
-            array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
-      }
-    }
-  }
-
-  function delete_form_submit(&$form_state) {
-
-    $layer = geoserver_get_layer_object($form_state['item']);
-
-    try {
-      $resource = $layer->to_resource();
-      $resource->delete();
-      parent::delete_form_submit($form_state);
-
-    } catch (geoserver_resource_exception $exc) {
-
-      drupal_set_message(t('Error when attempting to delete %layer: %message',
-          array('%layer' => $layer->title, '%message' => $exc->getMessage())), 'error');
-    }
   }
 }
 

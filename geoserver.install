@@ -42,6 +42,8 @@ function geoserver_schema() {
       'primary key' => 'name',
       'identifier' => 'geoserver_layers',
       'default hook' => 'geoserver_layers',
+      'save callback' => 'geoserver_layer_save',
+      'delete callback' => 'geoserver_layer_delete',
       'api' => array(
         'owner' => 'geoserver',
         'api' => 'geoserver_layers',
