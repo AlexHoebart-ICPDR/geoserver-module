@@ -95,7 +95,7 @@ function geoserver_user_login(&$edit, $account) {
     if ($geoserver_login !== TRUE) {
       drupal_set_message(t("Failed to authenticate you with GeoServer. Some map services won't be available."), 'error');
       watchdog('geoserver', 'Could not authenticate %username at GeoServer: %reason',
-          array('%username' => urlencode($edit['values']['name']), '%reason' => $geoserver_login), 
+          array('%username' => urlencode($edit['values']['name']), '%reason' => $geoserver_login),
           WATCHDOG_ERROR);
     }
   }
@@ -114,7 +114,7 @@ function geoserver_login($username, $password) {
   if (empty($url)) {
     return t('URL not configured.');
   }
-  
+
   $geoserver_workspace_support = (bool)variable_get('geoserver_workspace_support', FALSE);
   if ($geoserver_workspace_support) {
     // prepend the workspace prefix to the username
@@ -158,7 +158,7 @@ function geoserver_login($username, $password) {
     $expire = ini_get('session.cookie_lifetime') ? time()+ini_get('session.cookie_lifetime') : 0;
     if (setcookie('JSESSIONID', $cookies['JSESSIONID'], $expire, $url['path'], $url['host'])) {
       return TRUE;
-    } 
+    }
     else {
       return t('Unable to set Cookie.');
     }
@@ -167,10 +167,10 @@ function geoserver_login($username, $password) {
 
     return t('Wrong user credentials.');
 
-  } 
+  }
   else {
 
-    return t('Could not contact GeoServer at @login_url (@http_code).', 
+    return t('Could not contact GeoServer at @login_url (@http_code).',
       array('@login_url' => $login_url, '@http_code' => $http_code));
   }
 }
@@ -296,7 +296,7 @@ function geoserver_post($url, $content) {
     );
   }
   else {
-    throw new Exception('Unsupported format.');
+    throw new geoserver_resource_curl_exception('Unsupported format.');
   }
 
   $request = curl_init($url);
@@ -311,7 +311,17 @@ function geoserver_post($url, $content) {
   $result->url = $url;
   $result->content = $content;
   $result->data = curl_exec($request);
+  if ($result->data===FALSE) {
+    $e = new geoserver_resource_curl_exception($request);
+    curl_close($request);
+    throw $e;
+  }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  if ($result->code<200 || $result->code>299) {
+    $e = new geoserver_resource_curl_exception($request);
+    curl_close($request);
+    throw $e;
+  }
   curl_close($request);
 
   return $result;
@@ -345,7 +355,7 @@ function geoserver_put($url, $content) {
     );
   }
   else {
-    throw new Exception('Unsupported format.');
+    throw new geoserver_resource_curl_exception('Unsupported format.');
   }
 
   // Create temporary file from payload.
@@ -365,7 +375,17 @@ function geoserver_put($url, $content) {
   $result = new stdClass();
   $result->url  = $url;
   $result->data = curl_exec($request);
+  if ($result->data===FALSE) {
+    $e = new geoserver_resource_curl_exception($request);
+    curl_close($request);
+    throw $e;
+  }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  if ($result->code<200 || $result->code>299) {
+    $e = new geoserver_resource_curl_exception($request);
+    curl_close($request);
+    throw $e;
+  }
   curl_close($request);
 
   return $result;
@@ -426,7 +446,17 @@ function geoserver_delete($url) {
   $result = new stdClass();
   $result->url = $url;
   $result->data = curl_exec($request);
+  if ($result->data===FALSE) {
+    $e = new geoserver_resource_curl_exception($request);
+    curl_close($request);
+    throw $e;
+  }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  if ($result->code<200 || $result->code>299) {
+    $e = new geoserver_resource_curl_exception($request);
+    curl_close($request);
+    throw $e;
+  }
   curl_close($request);
 
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
