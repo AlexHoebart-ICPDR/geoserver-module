@@ -480,6 +480,78 @@ function geoserver_get_cookiefile($uid = NULL) {
 }
 
 /**
+ * Implements hook_modules_enabled().
+ *
+ * Create styles and layers from enabled features.
+ */
+function geoserver_modules_enabled($modules) {
+  foreach ($modules as $module) {
+    if ($feature = features_load_feature($module)) {
+
+      // Create styles.
+      if (isset($feature->info['features']['geoserver_styles'])) {
+        $workspace = variable_get('geoserver_workspace', '');
+        $styles = module_invoke($module, 'geoserver_styles');
+        foreach ($styles as $style) {
+          try {
+            geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
+          }
+          catch (geoserver_resource_exception $exc) {
+            watchdog('geoserver', 'Error when attempting to import style %name: %message',
+              array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+          }
+        }
+      }
+
+      // Create layers.
+      if (isset($feature->info['features']['geoserver_layers'])) {
+        $layers = module_invoke($module, 'geoserver_layers');
+        foreach ($layers as $layer) {
+          $layer = geoserver_get_layer_object($layer);
+          $layer->save();
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_modules_disabled().
+ *
+ * Delete styles and layers from disabled features.
+ */
+function geoserver_modules_disabled($modules) {
+  foreach ($modules as $module) {
+    if ($feature = features_load_feature($module)) {
+
+      // Delete styles.
+      if (isset($feature->info['features']['geoserver_styles'])) {
+        $workspace = variable_get('geoserver_workspace', '');
+        $styles = module_invoke($module, 'geoserver_styles');
+        foreach ($styles as $style) {
+          try {
+            geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
+          }
+          catch (geoserver_resource_exception $exc) {
+            watchdog('geoserver', 'Error when attempting to delete style %name: %message',
+              array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+          }
+        }
+      }
+
+      // Delete layers.
+      if (isset($feature->info['features']['geoserver_layers'])) {
+        $layers = module_invoke($module, 'geoserver_layers');
+        foreach ($layers as $layer) {
+          $layer = geoserver_get_layer_object($layer);
+          $layer->delete();
+        }
+      }
+    }
+  }
+}
+
+/**
  * Parse cookie file.
  *
  * @return array Indexed array of cookies.
