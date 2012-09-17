@@ -32,10 +32,16 @@ $plugin = array(
   'strings' => array(
     'confirmation' => array(
       'add' => array(
-        'success' => t('Style saved.'),
+        'success' => t('Style added.'),
+        'fail' => t('Failed to completely add style. See the log for details.'),
       ),
+      'edit' => array(
+        'success' => t('Style updated.'),
+        'fail' => t('Failed to completely update style. See the log for details.'),
+       ),
       'delete' => array(
         'success' => t('Style was deleted.'),
+        'fail' => t('Failed to completely delete style. See the log for details.'),
       )
     )
   ),

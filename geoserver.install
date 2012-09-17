@@ -91,6 +91,8 @@ function geoserver_schema() {
       'primary key' => 'name',
       'identifier' => 'geoserver_styles',
       'default hook' => 'geoserver_styles',
+      'save callback' => 'geoserver_style_save',
+      'delete callback' => 'geoserver_style_delete',
       'api' => array(
         'owner' => 'geoserver',
         'api' => 'geoserver_styles',

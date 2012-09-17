@@ -46,20 +46,69 @@ function geoserver_style_load($name, $reset = FALSE) {
  *
  * @param $style
  *   The style object to save.
- * @return
- *   The results of DB write or FALSE if no name.
  */
-function geoserver_style_save($style) {
-  if (!empty($style->name)) {
-    return (db_select('geoserver_styles')
-          ->fields('geoserver_styles', array('name'))
-          ->condition('name', $style->name)
-          ->execute()
-          ->fetchCol()) ?
-      drupal_write_record('geoserver_styles', $style, 'name') :
-      drupal_write_record('geoserver_styles', $style);
+function geoserver_style_save(&$style) {
+  $workspace = variable_get('geoserver_workspace', '');
+  $update = ($style->export_type & EXPORT_IN_DATABASE) ? array('name') : array();
+  $style->export_type = EXPORT_IN_DATABASE;
+  $result = drupal_write_record('geoserver_styles', $style, $update);
+
+  if (!$result) {
+    return FALSE;
   }
-  return FALSE;
+
+  if (geoserver_style_status($style) == GEOSERVER_STATUS_NOT_FOUND) {
+    try {
+      geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
+    }
+    catch (geoserver_resource_exception $exc) {
+      watchdog('geoserver', 'Error when attempting to create style %name: %message', 
+        array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  } else {
+    try {
+      geoserver_put("rest/workspaces/$workspace/styles/{$style->name}.sld", $style->data);
+    } catch (geoserver_resource_exception $exc) {
+      watchdog('geoserver', 'Error when attempting to update style %name: %message', 
+        array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+function geoserver_style_delete(&$style) {
+  $workspace = variable_get('geoserver_workspace', '');
+  $result = db_delete('geoserver_styles')
+    ->condition('name', is_object($style) ? $style->name : $style)
+    ->execute();
+
+  if (!$result) {
+    return FALSE;
+  }
+
+  try {
+    geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
+  } catch (geoserver_resource_exception $exc) {
+    watchdog('geoserver', 'Error when attempting to delete style %name: %message',
+      array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+    // Note: ctools doesn't take FALSE return values of delete callbacks into account yet.
+    return FALSE;
+  }
+
+  // Restore style if exported to code.
+  if ($style = geoserver_style_load($style->name, TRUE)) {
+    try {
+      geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
+    }
+    catch (geoserver_resource_exception $exc) {
+      watchdog('geoserver', 'Error when attempting to revert style %name: %message', 
+        array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  }
+  return TRUE;
 }
 
 /**
@@ -91,71 +140,11 @@ function geoserver_style_status($style) {
   }
 }
 
-/**
- * Save style.
- *
- * @param $style
- *   String identifier of a style or style object with name.
- * @return
- *   The results of DB write or FALSE if no name.
- */
-function geoserver_style_create($style) {
 
-  if (is_string($style)) {
-    $style = geoserver_style_load($style);
-  }
+function geoserver_styles_features_rebuild($module_name) {
 
-  $workspace = variable_get('geoserver_workspace', '');
-  $result = geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
+  dvm($module_name);
+  //var_dump($module_name);die;
+  dvm('geoserver_styles_features_rebuild');
 
-  if ($result->code != 201) {
-    throw new Exception($result->data);
-  }
-}
-
-/**
- * Save style.
- *
- * @param $style
- *   String identifier of a style or style object with name.
- * @return
- *   The results of DB write or FALSE if no name.
- */
-function geoserver_style_update($style) {
-
-  if (is_string($style)) {
-    $style = geoserver_style_load($style);
-  }
-
-  $workspace = variable_get('geoserver_workspace', '');
-  $result = geoserver_put("rest/workspaces/$workspace/styles/{$style->name}.sld", $style->data);
-
-  if ($result->code != 200) {
-    throw new Exception($result->data);
-  }
-}
-
-/**
- * Delete a style object from the database.
- *
- * @param $style
- *   String identifier of a style or style object with name.
- * @return
- *   The results of DB delete.
- */
-function geoserver_style_delete($style) {
-
-  if (is_string($style)) {
-    $style = geoserver_style_load($style);
-  }
-
-  $workspace = variable_get('geoserver_workspace', '');
-  $result = geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
-
-  if ($result->code == 200) {
-    db_delete('geoserver_styles')->condition('name', $style->name)->execute();
-  }
-  else {
-    throw new Exception($result->data);
-  }
 }

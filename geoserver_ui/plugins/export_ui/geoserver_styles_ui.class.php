@@ -114,47 +114,4 @@ class geoserver_styles_ui extends ctools_export_ui {
 
     return $options;
   }
-
-  function edit_form_submit(&$form, &$form_state) {
-
-    parent::edit_form_submit($form, $form_state);
-
-    $style = $form_state['item'];
-
-    if (geoserver_style_status($style) == GEOSERVER_STATUS_NOT_FOUND) {
-
-      try {
-        geoserver_style_create($style);
-      }
-
-      catch (Exception $exc) {
-        drupal_set_message(t('Error when attempting to create %style: %message',
-           array('%style' => $style->title, '%message' => $exc->getMessage())), 'error');
-      }
-
-    } else {
-
-      try {
-        geoserver_style_update($style);
-
-      } catch (geoserver_resource_exception $exc) {
-        drupal_set_message(t('Error when attempting to update %style: %message',
-            array('%style' => $style->title, '%message' => $exc->getMessage())), 'error');
-      }
-    }
-  }
-
-  function delete_form_submit(&$form_state) {
-
-    $item = $form_state['item'];
-
-    try {
-      geoserver_style_delete($item);
-      parent::delete_form_submit($form_state);
-    }
-    catch (Exception $exc) {
-      drupal_set_message(t('Error when attempting to delete %style: %message',
-          array('%style' => $item->title, '%message' => $exc->getMessage())), 'error');
-    }
-  }
 }
