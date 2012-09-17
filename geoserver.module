@@ -572,24 +572,3 @@ function geoserver_parse_cookiefile($file) {
   return $cookies;
 }
 
-
-/**
- * @addtogroup hooks
- * @{
- */
-
-/**
- * Allows to alter the name of the GeoServer user to use when a Drupal user is to be logged in into GeoServer.
- * 
- * @param String $username
- *   Name of Drupal user that is about to be logged in into GeoServer.
- * 
- * @return String
- *   Name of GeoServer user.
- */
-function hook_geoserver_modify_login($username) {
-}
-
-/**
- * @} End of "addtogroup hooks".
- */
