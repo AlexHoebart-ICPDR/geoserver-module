@@ -300,7 +300,7 @@ abstract class geoserver_layer_type {
 
     $source = explode('.', $this->data['source']);
 
-    if (empty($update) && $source[0] != 'node') {
+    if (empty($update) && $source[0] == 'node') {
       // Grant permissions derived from source.
       // Only for new node based layers for now.
       $roles = user_roles();
@@ -352,6 +352,18 @@ abstract class geoserver_layer_type {
   }
 
   function delete() {
+
+    $source = explode('.', $this->data['source']);
+    if ($source[0] == 'node') {
+      $permissions = array('read layer ' .  $this->name, 'write layer ' . $this->name);
+      db_delete('role_permission')
+        ->condition('permission', $permissions, 'IN')
+        ->execute();
+      // Clear the user access cache.
+      drupal_static_reset('user_access');
+      drupal_static_reset('user_role_permissions');
+    }
+
     try {
       $resource = $this->to_resource();
       return $resource->delete();
