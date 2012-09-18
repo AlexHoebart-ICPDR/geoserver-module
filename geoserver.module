@@ -486,7 +486,7 @@ function geoserver_get_cookiefile($uid = NULL) {
  */
 function geoserver_modules_enabled($modules) {
   foreach ($modules as $module) {
-    if ($feature = features_load_feature($module)) {
+    if (module_exists('features') && $feature = features_load_feature($module)) {
 
       // Create styles.
       if (isset($feature->info['features']['geoserver_styles'])) {
@@ -522,7 +522,7 @@ function geoserver_modules_enabled($modules) {
  */
 function geoserver_modules_disabled($modules) {
   foreach ($modules as $module) {
-    if ($feature = features_load_feature($module)) {
+    if (module_exists('features') && $feature = features_load_feature($module)) {
 
       // Delete styles.
       if (isset($feature->info['features']['geoserver_styles'])) {
