@@ -129,7 +129,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
       $layers_option['source'] = array(
         '#type' => 'select',
         '#title' => t('Source'),
-        '#options' => $layer_type_name::get_sources(),
+        '#options' => call_user_func($layer_type_name . '::get_sources'),
         '#default_value' => isset($layer->data['source']) ? $layer->data['source'] : '',
         '#description' => t('Please select a source for this layer.'),
         '#ajax' => array(
