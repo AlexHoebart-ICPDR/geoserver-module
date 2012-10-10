@@ -67,10 +67,10 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         }
       });
 
-      // Use style description if it matches a render intent.
+      // Use style name if it matches a render intent.
       renderIntent = 'default';
-      if (jQuery.inArray(style.description, intents) > -1) {
-        renderIntent = style.description;
+      if (jQuery.inArray(style.name, intents) > -1) {
+        renderIntent = style.name;
       }
 
       // Apply style to layer if the specific render intent is not already set.
