@@ -9,10 +9,18 @@
  */
 Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, map, options) {
 
-  var sld, renderIntent, intents = ['default', 'select', 'temporary', 'delete'];
-  var layer = new OpenLayers.Layer.Vector(title, {
+  var sld, layer, strategy, renderIntent, 
+      intents = ['default', 'select', 'temporary', 'delete'];
+
+  if (options.strategy == 'fixed') {
+    strategy = new OpenLayers.Strategy.Fixed();
+  } else {
+    strategy = new OpenLayers.Strategy.BBOX();
+  }
+
+  layer = new OpenLayers.Layer.Vector(title, {
     drupalID: options.drupalID,
-    strategies: [new OpenLayers.Strategy.BBOX()],
+    strategies: [strategy],
     projection: 'EPSG:'+map.projection,
     buffer: 0,
     styleMap: new OpenLayers.StyleMap(),

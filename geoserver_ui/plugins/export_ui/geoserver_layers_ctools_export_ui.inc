@@ -151,6 +151,24 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
           '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '',
           '#description' => t('This makes your layer\'s content available as vector data.'),
         );
+        $layers_option['openlayers']['wfs_strategy'] = array(
+          '#type' => 'select',
+          '#options' => array(
+            'bbox' => 'Bounding Box',
+            'fixed' => 'Fixed',
+          ),
+          '#default_value' => isset($openlayers['wfs_strategy']) ? $openlayers['wfs_strategy'] : 'bbox',
+          '#states' => array(
+            'visible' => array(
+              ':input[name="' . $layer_type_name . '[openlayers][wfs]"]' => array(
+                'checked' => TRUE,
+              ),
+            ),
+          ),
+          '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
+          '#prefix' => '<div style="padding-left:20px">',
+          '#suffix' => '</div>',
+        );
         $layers_option['openlayers']['gwc'] = array(
           '#type' => 'checkbox',
           '#title' => t('Provide a cached OpenLayers WMS layer.'),

@@ -50,6 +50,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
       'projection' => array('4326', '900913'),
       'baselayer' => FALSE,
       'typeName' => '', 
+      'strategy' => 'bbox',
       'vector' => TRUE,
       'formatOptions' => array(
         'extractStyles' => TRUE,
@@ -76,6 +77,16 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         '#description' => t('The typename of the features requested. Equals the layer name in GeoServer.'),
         '#maxlength' => 100,
         '#default_value' => isset($this->data['typeName']) ? $this->data['typeName'] : ''
+      ),
+      'strategy' => array(
+        '#type' => 'select',
+        '#title' => t('Strategy'),
+        '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
+        '#options' => array(
+          'bbox' => t('Bounding Box'),
+          'fixed' => t('Fixed'),
+        ),
+        '#default_value' => isset($this->data['strategy']) ? $this->data['strategy'] : 'bbox',
       ),
       'sld' => array(
         '#type' => 'textarea',

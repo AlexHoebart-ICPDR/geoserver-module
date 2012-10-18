@@ -21,9 +21,11 @@ function geoserver_openlayers_layers() {
     if (!isset($gs_layer->data['openlayers'])) {
       // Layer has no OpenLayers configuration.
       break;
+    } else {
+      $openlayers = $gs_layer->data['openlayers'];
     }
 
-    if ($gs_layer->data['openlayers']['gwc']) {
+    if ($openlayers['gwc']) {
       $ol_layer = new stdClass();
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_gwc';
@@ -40,7 +42,7 @@ function geoserver_openlayers_layers() {
           'singleTile' => 0,
         ),
         'options' => array(
-          'srs' => $gs_layer->data['openlayers']['gwc_srs'],
+          'srs' => $openlayers['gwc_srs'],
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',
@@ -51,7 +53,7 @@ function geoserver_openlayers_layers() {
       $ol_layers[$ol_layer->name] = $ol_layer;
     }
 
-    if ($gs_layer->data['openlayers']['wfs']) {
+    if ($openlayers['wfs']) {
       $style = $gs_layer->data['style'];
       $sld = isset($gs_styles[$style]) ? $gs_styles[$style]->data : '';
       $ol_layer = new stdClass();
@@ -65,11 +67,12 @@ function geoserver_openlayers_layers() {
         'sld' => $sld,
         'url' => $url . $workspace . '/ows',
         'typeName' => $workspace . ':' . $gs_layer->name,
+        'strategy' => isset($openlayers['wfs_strategy']) ? $openlayers['wfs_strategy'] : 'bbox',
       );
       $ol_layers[$ol_layer->name] = $ol_layer;
     }
 
-    if ($gs_layer->data['openlayers']['wms']) {
+    if ($openlayers['wms']) {
       $ol_layer = new stdClass();
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_wms';
@@ -86,7 +89,7 @@ function geoserver_openlayers_layers() {
           'singleTile' => 1,
         ),
         'options' => array(
-          'srs' => $gs_layer->data['openlayers']['wms_srs'],
+          'srs' => $openlayers['wms_srs'],
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',
