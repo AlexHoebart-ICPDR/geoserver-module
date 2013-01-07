@@ -120,7 +120,7 @@ function geoserver_login($username, $password) {
     // prepend the workspace prefix to the username
     $defaultPrefix = 'drupal';
     $workspace_name = variable_get('geoserver_workspace', $defaultPrefix);
-    $username = $workspace_name.':'.$username;
+    $username = $workspace_name.'_'.$username;
   }
 
   // Parse URL to set path and host specific Cookie.
