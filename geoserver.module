@@ -8,6 +8,7 @@
 module_load_include('inc', 'geoserver', '/geoserver.openlayers');
 module_load_include('inc', 'geoserver', '/geoserver.layer');
 module_load_include('inc', 'geoserver', '/geoserver.style');
+module_load_include('inc', 'geoserver', '/geoserver.httpresponse');
 
 define('GEOSERVER_STATUS_FOUND_SAME', 1);
 define('GEOSERVER_STATUS_FOUND_DIFF', 2);
@@ -110,8 +111,8 @@ function geoserver_user_login(&$edit, $account) {
  * @return boolean|string Error message on failure, otherwise TRUE.
  */
 function geoserver_login($username, $password) {
-  $url = variable_get('geoserver_url', '');
-  if (empty($url)) {
+  $urlConfigured = variable_get('geoserver_url', '');
+  if (empty($urlConfigured)) {
     return t('URL not configured.');
   }
 
@@ -120,11 +121,11 @@ function geoserver_login($username, $password) {
     // prepend the workspace prefix to the username
     $defaultPrefix = 'drupal';
     $workspace_name = variable_get('geoserver_workspace', $defaultPrefix);
-    $username = $workspace_name.'_'.$username;
+    $username = $workspace_name . '_' . $username;
   }
 
   // Parse URL to set path and host specific Cookie.
-  $url = parse_url($url);
+  $url = parse_url($urlConfigured);
   $host_port = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   $url_scheme = empty($url['scheme']) ? 'http' : $url['scheme'];
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
@@ -155,12 +156,33 @@ function geoserver_login($username, $password) {
       return TRUE;
     }
 
-    $expire = ini_get('session.cookie_lifetime') ? time()+ini_get('session.cookie_lifetime') : 0;
-    if (setcookie('JSESSIONID', $cookies['JSESSIONID'], $expire, $url['path'], $url['host'])) {
-      return TRUE;
+    $expire = ini_get('session.cookie_lifetime') ? ini_get('session.cookie_lifetime') : -1;
+    if ($_SERVER['HTTP_HOST']!==$url['host']) {
+        // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
+        // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
+        $geoserverSetCookie = url($urlConfigured . 'ows', array(
+            'query' => array(
+                'service' => 'cookie',
+                'request' => 'setCookie',
+                'version' => '1.0.0',
+                'name' => 'JSESSIONID',
+                'value' => $cookies['JSESSIONID'],
+                // Seconds after current time
+                'max-age' => $expire,
+                'path' => $url['path'],
+                'domain' => $url['host']
+            )
+        ));
+        // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
+        $_SESSION['geoserverSetCookie'] = $geoserverSetCookie;
+        return TRUE;
+    }
+    elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire===-1)?0:(time()+$expire), $url['path'])) {
+        // Cookie written without requiring extensions to be present in GeoServer
+        return TRUE;
     }
     else {
-      return t('Unable to set Cookie.');
+        return t('Unable to set Cookie.');
     }
   }
   elseif (isset($cookies['JSESSIONID'])) {
@@ -176,9 +198,28 @@ function geoserver_login($username, $password) {
 }
 
 /**
+ * Instructs GeoServer to set a session cookie. Thus Drupal can log the user in even though GeoServer might be running on a foreign domain.
+ */
+function geoserver_page_alter(&$page) {
+    drupal_session_start();
+    if (array_key_exists('geoserverSetCookie', $_SESSION)) {
+        $geoserverSetCookie = $_SESSION['geoserverSetCookie'];
+        drupal_add_js($geoserverSetCookie, array(
+            'type' => 'external',
+            'defer' => FALSE,
+            // Ensure a separate script tag is emitted because headers of GeoServer need to be retained
+            'preprocess' => FALSE
+        ));
+        unset($_SESSION['geoserverSetCookie']);
+    }
+}
+
+
+/**
  * Implements hook_user_login().
  */
 function geoserver_user_logout($account) {
+  geoserver_get('/j_spring_security_logout');
 
   $url = parse_url(variable_get('geoserver_url', ''));
   $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
@@ -307,7 +348,7 @@ function geoserver_post($url, $content) {
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
 
-  $result = new stdClass();
+  $result = new geoserver_httpresponse();
   $result->url = $url;
   $result->content = $content;
   $result->data = curl_exec($request);
@@ -372,7 +413,7 @@ function geoserver_put($url, $content) {
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
 
-  $result = new stdClass();
+  $result = new geoserver_httpresponse();
   $result->url  = $url;
   $result->data = curl_exec($request);
   if ($result->data===FALSE) {
@@ -404,8 +445,10 @@ function geoserver_get($url, $uid = NULL) {
 
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile($uid));
+  // Follow any redirects (though PHP/cURL might not status code 300 without Location header properly)
+  curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
 
-  $result = new stdClass();
+  $result = new geoserver_httpresponse();
   $result->url = $url;
   $result->data = curl_exec($request);
   if ($result->data===FALSE) {
@@ -443,7 +486,7 @@ function geoserver_delete($url) {
   curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
   curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'DELETE');
 
-  $result = new stdClass();
+  $result = new geoserver_httpresponse();
   $result->url = $url;
   $result->data = curl_exec($request);
   if ($result->data===FALSE) {

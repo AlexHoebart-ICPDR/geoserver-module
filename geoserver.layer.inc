@@ -81,7 +81,8 @@ function geoserver_layer_save(&$object) {
   if ($result) {
     $layer = geoserver_get_layer_object($object);
     return $layer->save();
-  } else {
+  }
+  else {
     return FALSE;
   }
 }
@@ -95,7 +96,8 @@ function geoserver_layer_delete(&$object) {
   if ($result) {
     $layer = geoserver_get_layer_object($object);
     $layer->delete();
-  } else {
+  }
+  else {
     return FALSE;
   }
 
@@ -339,7 +341,8 @@ abstract class geoserver_layer_type {
           array('%name' => $this->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
         return FALSE;
       }
-    } else {
+    }
+    else {
       try {
         $resource = $this->to_resource();
         return $resource->update();
@@ -355,7 +358,7 @@ abstract class geoserver_layer_type {
 
     $source = explode('.', $this->data['source']);
     if ($source[0] == 'node') {
-      $permissions = array('read layer ' .  $this->name, 'write layer ' . $this->name);
+      $permissions = array('read layer ' . $this->name, 'write layer ' . $this->name);
       db_delete('role_permission')
         ->condition('permission', $permissions, 'IN')
         ->execute();

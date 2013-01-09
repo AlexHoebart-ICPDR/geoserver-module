@@ -21,7 +21,8 @@ function geoserver_openlayers_layers() {
     if (!isset($gs_layer->data['openlayers'])) {
       // Layer has no OpenLayers configuration.
       break;
-    } else {
+    }
+    else {
       $openlayers = $gs_layer->data['openlayers'];
     }
 

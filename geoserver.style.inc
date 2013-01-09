@@ -66,7 +66,8 @@ function geoserver_style_save(&$style) {
         array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
       return FALSE;
     }
-  } else {
+  }
+  else {
     try {
       geoserver_put("rest/workspaces/$workspace/styles/{$style->name}.sld", $style->data);
     } catch (geoserver_resource_exception $exc) {
