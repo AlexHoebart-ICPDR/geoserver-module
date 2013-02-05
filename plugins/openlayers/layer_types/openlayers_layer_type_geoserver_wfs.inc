@@ -48,7 +48,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
       'layer_handler' => 'openlayers_layer_type_geoserver_wfs',
       'url' => $url . $workspace . '/ows',
       'projection' => array('4326', '900913'),
-      'baselayer' => FALSE,
+      'isBaseLayer' => FALSE,
       'typeName' => '', 
       'strategy' => 'bbox',
       'vector' => TRUE,
