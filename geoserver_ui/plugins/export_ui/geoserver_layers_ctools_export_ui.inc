@@ -102,10 +102,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
     foreach ($layer_types as $layer_type) {
 
       $layer_type_name = $layer_type['name'];
-
-      if (!$layer) {
-        $layer = geoserver_layer_type_load($layer_type_name);
-      }
+      $layer = geoserver_layer_type_load($layer_type_name);
 
       $layers_option = array(
         '#tree' => TRUE,
