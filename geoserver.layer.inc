@@ -398,7 +398,7 @@ class geoserver_resource_feature_type extends geoserver_resource {
       $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes.json";
       geoserver_post($url, $this->feature_type);
     } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Could not create featuretype.', array(), WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not create featuretype: %message', array("%message" => $exc->getMessage()), WATCHDOG_ERROR);
       return FALSE;
     }
 
