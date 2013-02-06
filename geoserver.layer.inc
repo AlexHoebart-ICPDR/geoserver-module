@@ -398,14 +398,14 @@ class geoserver_resource_feature_type extends geoserver_resource {
       $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes.json";
       geoserver_post($url, $this->feature_type);
     } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Could not create featuretype.', WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not create featuretype.', array(), WATCHDOG_ERROR);
       return FALSE;
     }
 
     try {
       geoserver_put("rest/layers/{$this->workspace}:{$this->name}.json", $this->layer);
     } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Could not update layer.', WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not update layer.', array(), WATCHDOG_ERROR);
       return FALSE;
     }
     return TRUE;
@@ -420,14 +420,14 @@ class geoserver_resource_feature_type extends geoserver_resource {
       $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes/{$this->name}.json";
       geoserver_put($url, $this->feature_type);
     } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Could not update featuretype.', WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not update featuretype.', array(), WATCHDOG_ERROR);
       return FALSE;
     }
 
     try {
       geoserver_put("rest/layers/{$this->workspace}:{$this->name}.json", $this->layer);
     } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Could not update layer.', WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not update layer.', array(), WATCHDOG_ERROR);
       return FALSE;
     }
     return TRUE;
@@ -441,7 +441,7 @@ class geoserver_resource_feature_type extends geoserver_resource {
       $url = "rest/workspaces/{$this->workspace}/datastores/{$this->datastore}/featuretypes/{$this->name}.json?recurse=true";
       geoserver_delete($url);
     } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Could not delete featuretype.', WATCHDOG_ERROR);
+      watchdog('geoserver', 'Could not delete featuretype.', array(), WATCHDOG_ERROR);
       return FALSE;
     }
     return TRUE;
