@@ -27,6 +27,7 @@ function geoserver_openlayers_layers() {
     }
 
     if ($openlayers['gwc']) {
+      $data = isset($openlayers['gwc_data']) ? $openlayers['gwc_data'] : array();
       $ol_layer = new stdClass();
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_gwc';
@@ -36,14 +37,15 @@ function geoserver_openlayers_layers() {
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'gwc/service/wms',
+        'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
+        'projection' => isset($data['projection']) ? $data['projection'] : array('900913'),
         'params' => array(
-          'isBaseLayer' => 0,
+          'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
           'buffer' => '2',
           'ratio' => '1.5',
           'singleTile' => 0,
         ),
         'options' => array(
-          'srs' => $openlayers['gwc_srs'],
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',
@@ -57,6 +59,7 @@ function geoserver_openlayers_layers() {
     if ($openlayers['wfs']) {
       $style = $gs_layer->data['style'];
       $sld = isset($gs_styles[$style]) ? $gs_styles[$style]->data : '';
+      $data = isset($openlayers['wfs_data']) ? $openlayers['wfs_data'] : array();
       $ol_layer = new stdClass();
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_wfs';
@@ -68,12 +71,15 @@ function geoserver_openlayers_layers() {
         'sld' => $sld,
         'url' => $url . $workspace . '/ows',
         'typeName' => $workspace . ':' . $gs_layer->name,
-        'strategy' => isset($openlayers['wfs_strategy']) ? $openlayers['wfs_strategy'] : 'bbox',
+        'strategy' => isset($data['strategy']) ? $data['strategy'] : 'bbox',
+        'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
+        'projection' => isset($data['projection']) ? $data['projection'] : array('900913'),
       );
       $ol_layers[$ol_layer->name] = $ol_layer;
     }
 
     if ($openlayers['wms']) {
+      $data = isset($openlayers['wms_data']) ? $openlayers['wms_data'] : array();
       $ol_layer = new stdClass();
       $ol_layer->api_version = 1;
       $ol_layer->name = $gs_layer->name . '_wms';
@@ -83,14 +89,15 @@ function geoserver_openlayers_layers() {
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'wms',
+        'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
+        'projection' => isset($data['projection']) ? $data['projection'] : array('900913'),
         'params' => array(
-          'isBaseLayer' => 0,
+          'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
           'buffer' => '2',
           'ratio' => '1.5',
           'singleTile' => 1,
         ),
         'options' => array(
-          'srs' => $openlayers['wms_srs'],
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',

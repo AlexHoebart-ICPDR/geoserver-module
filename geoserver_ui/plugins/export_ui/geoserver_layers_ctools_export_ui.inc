@@ -137,84 +137,94 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
 
       if (module_exists('openlayers')) {
         $openlayers = isset($layer->data['openlayers']) ? $layer->data['openlayers'] : array();
+
+        $wfs_layer = isset($openlayers['wfs_data']) ? 
+          new openlayers_layer_type((object)array('data' => $openlayers['wfs_data'])) : 
+          new openlayers_layer_type();
+
+        $gwc_layer = isset($openlayers['gwc_data']) ? 
+          new openlayers_layer_type((object)array('data' => $openlayers['gwc_data'])) : 
+          new openlayers_layer_type();
+
+        $wms_layer = isset($openlayers['wms_data']) ? 
+          new openlayers_layer_type((object)array('data' => $openlayers['wms_data'])) : 
+          new openlayers_layer_type();
+
         $layers_option['openlayers'] = array(
           '#type' => 'fieldset',
           '#title' => t('OpenLayers'),
           '#description' => t('Select how you want to have this layer available in maps of the OpenLayers module. Note that raster data is only available for inclusion in the OpenLayers module if the projection chosen here matches the OpenLayers map in question.'),
-        );
-        $layers_option['openlayers']['wfs'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Provide an OpenLayers WFS layer.'),
-          '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '',
-          '#description' => t('This makes your layer\'s content available as vector data.'),
-        );
-        $layers_option['openlayers']['wfs_strategy'] = array(
-          '#type' => 'select',
-          '#options' => array(
-            'bbox' => 'Bounding Box',
-            'fixed' => 'Fixed',
+          'wfs' => array(
+            '#type' => 'checkbox',
+            '#title' => t('Provide an OpenLayers WFS layer.'),
+            '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '',
+            '#description' => t('This makes your layer\'s content available as vector data.'),
           ),
-          '#default_value' => isset($openlayers['wfs_strategy']) ? $openlayers['wfs_strategy'] : 'bbox',
-          '#states' => array(
-            'visible' => array(
-              ':input[name="' . $layer_type_name . '[openlayers][wfs]"]' => array(
-                'checked' => TRUE,
+          'wfs_data' => array_merge(
+            array(
+              '#type' => 'fieldset',
+              '#title' => t('WFS layer options'),
+              '#prefix' => '<div style="padding-left:20px">',
+              '#suffix' => '</div>',
+              '#states' => array(
+                'visible' => array(
+                  ':input[name="' . $layer_type_name . '[openlayers][wfs]"]' => array(
+                    'checked' => TRUE,
+                  ),
+                ),
+              ),
+              'strategy' => array(
+                '#type' => 'select',
+                '#title' => t('Strategy'),
+                '#options' => array(
+                  'bbox' => 'Bounding Box',
+                  'fixed' => 'Fixed',
+                ),
+                '#default_value' => isset($wfs_layer->data['strategy']) ? $wfs_layer->data['strategy'] : 'bbox',
+                '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
+              ),
+            ), $wfs_layer->options_form()
+          ),
+          'gwc' => array(
+            '#type' => 'checkbox',
+            '#title' => t('Provide a cached OpenLayers WMS layer.'),
+            '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '',
+            '#description' => t('Creates a layer that transmits its data using several small adjacent images.'),
+          ),
+          'gwc_data' => array(
+            '#type' => 'fieldset',
+            '#title' => t('Cached WMS layer options'),
+            '#prefix' => '<div style="padding-left:20px">',
+            '#suffix' => '</div>',
+            '#states' => array(
+              'visible' => array(
+                ':input[name="' . $layer_type_name . '[openlayers][gwc]"]' => array(
+                  'checked' => TRUE,
+                ),
               ),
             ),
+            $gwc_layer->options_form(),
           ),
-          '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
-          '#prefix' => '<div style="padding-left:20px">',
-          '#suffix' => '</div>',
-        );
-        $layers_option['openlayers']['gwc'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Provide a cached OpenLayers WMS layer.'),
-          '#default_value' => isset($openlayers['gwc']) ? $openlayers['gwc'] : '',
-          '#description' => t('Creates a layer that transmits its data using several small adjacent images.'),
-        );
-        // TODO: merge *_srs fields, depends on Drupal 7.13
-        // Conditional visibility: http://drupal.org/node/1464758
-        $layers_option['openlayers']['gwc_srs'] = array(
-          '#type' => 'select',
-          '#options' => array(
-            'EPSG:4326' => '4326',
-            'EPSG:900913' => '900913',
+          'wms' => array(
+            '#type' => 'checkbox',
+            '#title' => t('Provide an untiled OpenLayers WMS layer.'),
+            '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '',
+            '#description' => t('Creates a layer that transmits its data using one image that spans the entire map.'),
           ),
-          '#default_value' => isset($openlayers['gwc_srs']) ? $openlayers['gwc_srs'] : '',
-          '#states' => array(
-            'visible' => array(
-              ':input[name="' . $layer_type_name . '[openlayers][gwc]"]' => array(
-                'checked' => TRUE,
+          'wms_data' => array(
+            '#type' => 'fieldset',
+            '#title' => t('WMS layer options'),
+            '#prefix' => '<div style="padding-left:20px">',
+            '#suffix' => '</div>',
+            '#states' => array(
+              'visible' => array(
+                ':input[name="' . $layer_type_name . '[openlayers][wms]"]' => array(
+                  'checked' => TRUE,
+                ),
               ),
             ),
+            $wms_layer->options_form(),
           ),
-          '#description' => t('Choose projection of the generated raster graphics. This should match the projection of any other layers that you want to use in combination with your layer. Select 900913 if you intend to overlay your layer on maps by other providers such as OpenStreetMap, Google, Bing or MapQuest.'),
-          '#prefix' => '<div style="padding-left:20px">',
-          '#suffix' => '</div>',
-        );
-        $layers_option['openlayers']['wms'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Provide an untiled OpenLayers WMS layer.'),
-          '#default_value' => isset($openlayers['wms']) ? $openlayers['wms'] : '',
-          '#description' => t('Creates a layer that transmits its data using one image that spans the entire map.'),
-        );
-        $layers_option['openlayers']['wms_srs'] = array(
-          '#type' => 'select',
-          '#options' => array(
-            'EPSG:4326' => '4326',
-            'EPSG:900913' => '900913',
-          ),
-          '#default_value' => isset($openlayers['wms_srs']) ? $openlayers['wms_srs'] : '',
-          '#states' => array(
-            'visible' => array(
-              ':input[name="' . $layer_type_name . '[openlayers][wms]"]' => array(
-                'checked' => TRUE,
-              ),
-            ),
-          ),
-          '#description' => t('Choose projection of the generated raster graphics. This should match the projection of any other layers that you want to use in combination with your layer. Select 900913 if you intend to overlay your layer on maps by other providers such as OpenStreetMap, Google, Bing or MapQuest.'),
-          '#prefix' => '<div style="padding-left:20px">',
-          '#suffix' => '</div>',
         );
       }
 
