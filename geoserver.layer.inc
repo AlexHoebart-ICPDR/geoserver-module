@@ -376,6 +376,9 @@ abstract class geoserver_layer_type {
       return FALSE;
     }
   }
+
+  function load_source() {
+  }
 }
 
 class geoserver_resource_feature_type extends geoserver_resource {
