@@ -38,7 +38,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         srsName: 'EPSG:'+map.projection
       },
       filterToParams: function(filter, params) {
-        if (filter.type === OpenLayers.Filter.Spatial.BBOX) {
+        if (filter.type === OpenLayers.Filter.Spatial.BBOX && !params.cql_filter) {
           params.bbox = filter.value.toArray();
           if (filter.projection) {
             params.bbox.push(filter.projection.getCode());

@@ -60,6 +60,8 @@ function geoserver_cron() {
 function geoserver_ctools_plugin_api($module, $api) {
   if ($module == 'openlayers') {
     switch ($api) {
+      case 'behaviors':
+        return array('version' => 1);
       case 'openlayers_layers':
         return array('version' => 1);
     }
@@ -72,6 +74,9 @@ function geoserver_ctools_plugin_api($module, $api) {
 function geoserver_ctools_plugin_directory($module, $plugin) {
   if ($module == 'openlayers' && $plugin == 'layer_types') {
     return 'plugins/openlayers/layer_types';
+  }
+  elseif ($module == 'openlayers' && $plugin == 'behaviors') {
+    return 'plugins/openlayers/behaviors';
   }
   elseif ($module == 'geoserver' && $plugin == 'layer_types') {
     return 'plugins/geoserver/layer_types';
