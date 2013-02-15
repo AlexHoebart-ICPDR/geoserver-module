@@ -53,7 +53,7 @@ $plugin = array(
 
 function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
 
-  $layer = geoserver_get_layer_object($form_state['item']);
+  $layer_object = geoserver_get_layer_object($form_state['item']);
 
   if ($form_state['op'] == 'add'||'edit') {
     $form = array();
@@ -75,7 +75,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
       '#title' => t('Layer Title'),
       '#required' => TRUE,
       '#size' => 30,
-      '#default_value' => isset($layer->title) ? $layer->title : '',
+      '#default_value' => isset($layer_object->title) ? $layer_object->title : '',
       '#description' => t('The friendly name of your layer, which will appear in the administration interface.'),
     );
     $form['layer']['basics']['name'] = array(
@@ -85,13 +85,13 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
         'exists' => 'geoserver_layer_load',
         'source' => array('layer', 'basics', 'title'),
       ),
-      '#default_value' => isset($layer->name) ? $layer->name : '',
+      '#default_value' => isset($layer_object->name) ? $layer_object->name : '',
       '#description' => t('This is the unique name of the layer. It must contain only alphanumeric characters and underscores.'),
     );
     $form['layer']['basics']['description'] = array(
       '#type' => 'textfield',
       '#title' => t('Layer Description'),
-      '#default_value' => isset($layer->description) ? $layer->description : '',
+      '#default_value' => isset($layer_object->description) ? $layer_object->description : '',
       '#description' => t('The description of your layer, which will appear in the administration interface.'),
     );
 
@@ -102,7 +102,11 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
     foreach ($layer_types as $layer_type) {
 
       $layer_type_name = $layer_type['name'];
-      $layer = geoserver_layer_type_load($layer_type_name);
+      if (isset($layer_object->data) && $layer_object->data['type'] == $layer_type_name) {
+        $layer = $layer_object;
+      } else {
+        $layer = geoserver_layer_type_load($layer_type_name);
+      }
 
       $layers_option = array(
         '#tree' => TRUE,
@@ -251,7 +255,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
     $form['layer']['layer_type'] = array(
       '#type' => 'select',
       '#title' => t('Layer Type'),
-      '#default_value' => isset($layer->data['type']) ? $layer->data['type']: '',
+      '#default_value' => isset($layer_object->data['type']) ? $layer_object->data['type'] : '',
       '#description' => t('Select the type of layer.'),
       '#options' => $layer_type_options,
     );
