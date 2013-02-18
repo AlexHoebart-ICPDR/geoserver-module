@@ -321,7 +321,7 @@ function geoserver_post($url, $content) {
 
   if (substr($parsed_url['path'], -3) == 'xml') {
     $headers = array(
-      'Content-Length: ' . drupal_strlen($content),
+      'Content-Length: ' . strlen($content), // using strlen instead of drupal_strlen as the length in bytes is needed here.
       'Content-type: text/xml',
     );
   }
@@ -380,7 +380,7 @@ function geoserver_put($url, $content) {
 
   if (substr($url, -3) == 'xml') {
     $headers = array(
-      'Content-Length: ' . drupal_strlen($content),
+      'Content-Length: ' . strlen($content), // using strlen instead of drupal_strlen as the length in bytes is needed here.
       'Content-type: text/xml',
     );
   }
