@@ -38,7 +38,7 @@ function geoserver_openlayers_layers() {
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'gwc/service/wms',
         'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
-        'projection' => isset($data['projection']) ? $data['projection'] : array('900913'),
+        'projection' => isset($data['projection']) ? $data['projection'] : array('EPSG:900913', 'EPSG:3857'),
         'params' => array(
           'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
           'buffer' => '2',
@@ -73,7 +73,7 @@ function geoserver_openlayers_layers() {
         'typeName' => $workspace . ':' . $gs_layer->name,
         'strategy' => isset($data['strategy']) ? $data['strategy'] : 'bbox',
         'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
-        'projection' => isset($data['projection']) ? $data['projection'] : array('900913'),
+        'projection' => isset($data['projection']) ? $data['projection'] : array('EPSG:900913', 'EPSG:3857'),
       );
       $ol_layers[$ol_layer->name] = $ol_layer;
     }
@@ -90,7 +90,7 @@ function geoserver_openlayers_layers() {
         'layer_type' => 'openlayers_layer_type_wms',
         'base_url' => $url . 'wms',
         'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
-        'projection' => isset($data['projection']) ? $data['projection'] : array('900913'),
+        'projection' => isset($data['projection']) ? $data['projection'] : array('EPSG:900913', 'EPSG:3857'),
         'params' => array(
           'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
           'buffer' => '2',

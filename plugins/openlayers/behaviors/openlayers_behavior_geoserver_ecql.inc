@@ -9,8 +9,8 @@
  */
 function geoserver_openlayers_behavior_geoserver_ecql_openlayers_behaviors() {
   return array(
-    'title' => t('GeoServer ECQL'),
-    'description' => t('Query GeoServer WMS and WFS layers using ECQL.'),
+    'title' => t('CQL Filter'),
+    'description' => t('Filter WMS and WFS layers using the Common Query Language (CQL).'),
     'type' => 'layer',
     'behavior' => array(
       'file' => 'openlayers_behavior_geoserver_ecql.inc',
@@ -45,14 +45,14 @@ class openlayers_behavior_geoserver_ecql extends openlayers_behavior {
       if ($layer->data['layer_type'] == 'openlayers_layer_type_geoserver_wfs') {
         $form[$name] = array(
           '#type' => 'textfield',
-          '#title' => t('ECQL Filter for %layer', array('%layer' => $name)),
+          '#title' => t('CQL Filter for %layer', array('%layer' => $name)),
           '#default_value' => (isset($defaults[$name])) ? $defaults[$name] : '',
         );
       }
     }
 
     $form['help'] = array(
-      '#markup' => t('<p>See the <a href="@ecql">ECQL reference</a> on how to write filters. Use #example as placeholder for IDs of form field value. Placeholder get replaced on the change event of the form field.</p>',
+      '#markup' => t('<p>See the <a href="@ecql">GeoServer CQL reference</a> on how to write filters. Use #example as placeholder for IDs of form field value. Placeholders get replaced on the change event of the form field.</p>',
         array('@ecql' => 'http://docs.geoserver.org/stable/en/user/filter/ecql_reference.html')),
     );
 

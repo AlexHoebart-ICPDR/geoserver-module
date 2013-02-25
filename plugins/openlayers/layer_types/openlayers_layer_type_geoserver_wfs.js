@@ -21,7 +21,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
   layer = new OpenLayers.Layer.Vector(title, {
     drupalID: options.drupalID,
     strategies: [strategy],
-    projection: 'EPSG:'+map.projection,
+    projection: map.projection,
     buffer: 0,
     styleMap: new OpenLayers.StyleMap(),
     protocol: new OpenLayers.Protocol.Script({
@@ -35,7 +35,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         // typeName equals layer name
         typeName: options.typeName,
         outputFormat: 'json',
-        srsName: 'EPSG:'+map.projection
+        srsName: map.projection
       },
       filterToParams: function(filter, params) {
         if (filter.type === OpenLayers.Filter.Spatial.BBOX && !params.cql_filter) {
