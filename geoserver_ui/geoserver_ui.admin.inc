@@ -14,8 +14,6 @@
  */
 function geoserver_ui_admin_settings_form() {
 
-  cartaro_demo_enable();
-
   $url        = variable_get('geoserver_url', '');
   $workspace  = variable_get('geoserver_workspace', '');
   $workspaces = array('');
