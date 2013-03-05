@@ -88,6 +88,7 @@ function geoserver_openlayers_layers() {
           array('!name' => $gs_layer->name));
       $ol_layer->data = array(
         'layer_type' => 'openlayers_layer_type_wms',
+        'geoserver_wms' => TRUE,
         'base_url' => $url . 'wms',
         'isBaseLayer' => isset($data['isBaseLayer']) ? $data['isBaseLayer'] : FALSE,
         'projection' => isset($data['projection']) ? $data['projection'] : array('EPSG:900913', 'EPSG:3857'),
