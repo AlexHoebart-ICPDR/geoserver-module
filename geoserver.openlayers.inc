@@ -16,15 +16,13 @@ function geoserver_openlayers_layers() {
   $url = variable_get('geoserver_url', '');
   $workspace = variable_get('geoserver_workspace', '');
 
-  foreach ($gs_layers as $gs_layer) {
+  foreach (array_values($gs_layers) as $gs_layer) {
 
     if (!isset($gs_layer->data['openlayers'])) {
-      // Layer has no OpenLayers configuration.
-      break;
+      // Layer has no OpenLayers configuration --> skip the layer
+      continue;
     }
-    else {
-      $openlayers = $gs_layer->data['openlayers'];
-    }
+    $openlayers = $gs_layer->data['openlayers'];
 
     if ($openlayers['gwc']) {
       $data = isset($openlayers['gwc_data']) ? $openlayers['gwc_data'] : array();
