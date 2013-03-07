@@ -47,7 +47,7 @@ function geoserver_openlayers_layers() {
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',
-          'layers' => $workspace . ':' . $gs_layer->name,
+          'layers' => array($workspace . ':' . $gs_layer->name),
           'styles' => '',
         ),
       );
@@ -100,7 +100,7 @@ function geoserver_openlayers_layers() {
           'TRANSPARENT' => 'true',
           'exceptions' => 'application/vnd.ogc.se_inimage',
           'format' => 'image/png',
-          'layers' => $workspace . ':' . $gs_layer->name,
+          'layers' => array($workspace . ':' . $gs_layer->name),
           'styles' => '',
         ),
       );
