@@ -141,18 +141,11 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
 
       if (module_exists('openlayers')) {
         $openlayers = isset($layer->data['openlayers']) ? $layer->data['openlayers'] : array();
+        $openlayers_layer = new openlayers_layer_type();
 
-        $wfs_layer = isset($openlayers['wfs_data']) ? 
-          new openlayers_layer_type((object)array('data' => $openlayers['wfs_data'])) : 
-          new openlayers_layer_type();
-
-        $gwc_layer = isset($openlayers['gwc_data']) ? 
-          new openlayers_layer_type((object)array('data' => $openlayers['gwc_data'])) : 
-          new openlayers_layer_type();
-
-        $wms_layer = isset($openlayers['wms_data']) ? 
-          new openlayers_layer_type((object)array('data' => $openlayers['wms_data'])) : 
-          new openlayers_layer_type();
+        $wfs_data = isset($openlayers['wfs_data']) ? array('data' => $openlayers['wfs_data']) : array();
+        $gwc_data = isset($openlayers['gwc_data']) ? array('data' => $openlayers['gwc_data']) : array();
+        $wms_data = isset($openlayers['wms_data']) ? array('data' => $openlayers['wms_data']) : array();
 
         $layers_option['openlayers'] = array(
           '#type' => 'fieldset',
@@ -164,31 +157,29 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
             '#default_value' => isset($openlayers['wfs']) ? $openlayers['wfs'] : '',
             '#description' => t('This makes your layer\'s content available as vector data.'),
           ),
-          'wfs_data' => array_merge(
-            array(
-              '#type' => 'fieldset',
-              '#title' => t('WFS layer options'),
-              '#prefix' => '<div style="padding-left:20px">',
-              '#suffix' => '</div>',
-              '#states' => array(
-                'visible' => array(
-                  ':input[name="' . $layer_type_name . '[openlayers][wfs]"]' => array(
-                    'checked' => TRUE,
-                  ),
+          'wfs_data' => array(
+            '#type' => 'fieldset',
+            '#title' => t('WFS layer options'),
+            '#prefix' => '<div style="padding-left:20px">',
+            '#suffix' => '</div>',
+            '#states' => array(
+              'visible' => array(
+                ':input[name="' . $layer_type_name . '[openlayers][wfs]"]' => array(
+                  'checked' => TRUE,
                 ),
               ),
-              'strategy' => array(
-                '#type' => 'select',
-                '#title' => t('Strategy'),
-                '#options' => array(
-                  'bbox' => 'Bounding Box',
-                  'fixed' => 'Fixed',
-                ),
-                '#default_value' => isset($wfs_layer->data['strategy']) ? $wfs_layer->data['strategy'] : 'bbox',
-                '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
+            ),
+            'strategy' => array(
+              '#type' => 'select',
+              '#title' => t('Strategy'),
+              '#options' => array(
+                'bbox' => 'Bounding Box',
+                'fixed' => 'Fixed',
               ),
-            ), $wfs_layer->options_form()
-          ),
+              '#default_value' => isset($wfs_layer->data['strategy']) ? $wfs_layer->data['strategy'] : 'bbox',
+              '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
+            ),
+          ) + $openlayers_layer->options_form((object)$wfs_data),
           'gwc' => array(
             '#type' => 'checkbox',
             '#title' => t('Provide a cached OpenLayers WMS layer.'),
@@ -207,8 +198,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
                 ),
               ),
             ),
-            $gwc_layer->options_form(),
-          ),
+          ) + $openlayers_layer->options_form((object)$gwc_data),
           'wms' => array(
             '#type' => 'checkbox',
             '#title' => t('Provide an untiled OpenLayers WMS layer.'),
@@ -227,8 +217,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
                 ),
               ),
             ),
-            $wms_layer->options_form(),
-          ),
+          ) + $openlayers_layer->options_form((object)$wms_data),
         );
       }
 
