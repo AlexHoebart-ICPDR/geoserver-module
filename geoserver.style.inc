@@ -129,7 +129,7 @@ function geoserver_style_status($style) {
   $workspace = variable_get('geoserver_workspace', '');
   try {
     $result = geoserver_get("rest/workspaces/$workspace/styles/{$style->name}.sld");
-  } catch (geoserver_resource_curl_exception $exc) {
+  } catch (geoserver_resource_http_exception $exc) {
     return GEOSERVER_STATUS_NOT_FOUND;
   }
 

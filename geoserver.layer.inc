@@ -161,22 +161,39 @@ function geoserver_layer_type_load($name, $reset = FALSE) {
   return FALSE;
 }
 
-
+/**
+ * Problem requesting some resource.
+ */
 class geoserver_resource_exception extends Exception {};
-class geoserver_resource_curl_exception extends geoserver_resource_exception {
+/**
+ * Problem requesting external resource using HTTP.
+ */
+class geoserver_resource_http_exception extends geoserver_resource_exception {
+  public function __construct($url, $code, $message){
+    $this->message = t("Access to !url returned HTTP status code !code.\n!message", array(
+      "!url" => $url,
+      "!code" => $code,
+      "!message" => $message
+    ));
+  }
+}
+/**
+ * Problem requesting external resource using curl.
+ */
+class geoserver_resource_curl_exception extends geoserver_resource_http_exception {
     public function __construct($curlHandle) {
         $error = curl_errno($curlHandle);
         if ($error===0) {
-            // No real error but undesired status code
-            $message = t("Access to !url returned HTTP status code !code.", array(
-                "!url" => curl_getinfo($curlHandle, CURLINFO_EFFECTIVE_URL),
-                "!code" => curl_getinfo($curlHandle, CURLINFO_HTTP_CODE)
-            ));
+          // No real error but undesired status code
+          parent::__construct(
+            curl_getinfo($curlHandle, CURLINFO_EFFECTIVE_URL),
+            curl_getinfo($curlHandle, CURLINFO_HTTP_CODE),
+            ''
+          );
         }
         else {
-            $message = curl_errno($curlHandle) . " " . curl_error($curlHandle);
+            $this->message = curl_errno($curlHandle) . " " . curl_error($curlHandle);
         }
-        $this->message = $message;
     }
 }
 
@@ -459,7 +476,7 @@ class geoserver_resource_feature_type extends geoserver_resource {
     try {
       $result = geoserver_get($url);
       $this->feature_type = $result->data;
-    } catch (geoserver_resource_curl_exception $exc) {
+    } catch (geoserver_resource_http_exception $exc) {
       throw new geoserver_resource_exception(
         t("Could not read feature types from data store @datastore of workspace @workspace from GeoServer: @exception", array(
           "@datastore" => $this->datastore,
@@ -471,7 +488,7 @@ class geoserver_resource_feature_type extends geoserver_resource {
     try {
       $result = geoserver_get("rest/layers/{$this->workspace}:{$this->name}.json");
       $this->layer = $result->data;
-    } catch (geoserver_resource_curl_exception $exc) {
+    } catch (geoserver_resource_http_exception $exc) {
       throw new geoserver_resource_exception(t("Could not read layer @layer from GeoServer: @exception", array(
         "@layer" => $this->name,
         "@exception" => $exc->getMessage()

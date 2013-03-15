@@ -342,7 +342,7 @@ function geoserver_post($url, $content) {
     );
   }
   else {
-    throw new geoserver_resource_curl_exception('Unsupported format.');
+    throw new geoserver_resource_exception('Unsupported format.');
   }
 
   $request = curl_init($url);
@@ -401,7 +401,7 @@ function geoserver_put($url, $content) {
     );
   }
   else {
-    throw new geoserver_resource_curl_exception('Unsupported format.');
+    throw new geoserver_resource_exception('Unsupported format.');
   }
 
   // Create temporary file from payload.
@@ -443,31 +443,46 @@ function geoserver_put($url, $content) {
  * @param String $url Path relative to GeoServer URL.
  */
 function geoserver_get($url, $uid = NULL) {
-
   $url = variable_get('geoserver_url', '') . trim($url, '/');
 
-  $request = curl_init($url);
-
-  curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile($uid));
-  // Follow any redirects (though PHP/cURL might not status code 300 without Location header properly)
-  curl_setopt($request, CURLOPT_FOLLOWLOCATION, TRUE);
+  // Use Drupal's HTTP layer instead of curl because the way PHP integrates
+  // curl breaks curl's CURLOPT_FOLLOWLOCATION option if PHP's open_basedir
+  // restriction is enabled.
+  $cookies = geoserver_parse_cookiefile(geoserver_get_cookiefile($uid));
+  $requestCookies = array();
+  foreach($cookies as $name => $value){
+    if(mb_strpos($name, '=')===FALSE && mb_ereg_match('\s|,|;', $value)===FALSE){
+      $requestCookies[] = $name.'='.$value;
+    } else {
+      throw new geoserver_resource_exception('Invalid characters in cookie.', 503);
+    }
+  }
+  $response = drupal_http_request($url, array(
+      'headers' => array(
+          'Cookie' => implode('; ', $requestCookies)
+      )
+  ));
 
   $result = new geoserver_httpresponse();
   $result->url = $url;
-  $result->data = curl_exec($request);
-  if ($result->data===FALSE) {
-    $e = new geoserver_resource_curl_exception($request);
-    curl_close($request);
-    throw $e;
+  $result->data = $response->data;
+  
+  // Drupal uses negatives codes to denote errors in parsing the URI.
+  if ($response->code<0) {
+    throw new geoserver_resource_exception(
+      $response->error,
+      $response->code
+    );
   }
-  $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
+  
+  $result->code = $response->code;
   if ($result->code<200 || $result->code>299) {
-    $e = new geoserver_resource_curl_exception($request);
-    curl_close($request);
-    throw $e;
+    throw new geoserver_resource_http_exception(
+      isset($response->redirect_url) ? $response->redirect_url : $url,
+      $response->code,
+      $response->data
+    );
   }
-  curl_close($request);
 
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
     $result->data = json_decode($result->data);
@@ -602,12 +617,20 @@ function geoserver_modules_disabled($modules) {
 /**
  * Parse cookie file.
  *
+ * @param string $file Location of cookie file.
  * @return array Indexed array of cookies.
  */
 function geoserver_parse_cookiefile($file) {
   // Parse cookie file.
   $cookies = array();
-  $lines = file($file);
+  $lines = @file($file);
+  if($lines===FALSE) {
+    drupal_set_message(
+      t("Couldn't read cookies for GeoServer. Did your session expire?"),
+      'error'
+    );
+    return array();
+  }
   foreach ($lines as $line) {
     if (substr($line, 0, 2) === '# ') {
       continue;
