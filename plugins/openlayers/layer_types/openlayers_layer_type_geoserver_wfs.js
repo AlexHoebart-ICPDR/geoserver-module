@@ -20,6 +20,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
 
   layer = new OpenLayers.Layer.Vector(title, {
     drupalID: options.drupalID,
+    attribution: options.attribution,
     strategies: [strategy],
     projection: map.projection,
     buffer: 0,

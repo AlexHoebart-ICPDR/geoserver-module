@@ -65,6 +65,7 @@ function geoserver_openlayers_layers() {
       $ol_layer->description = t('WFS layer of GeoServer layer !name',
           array('!name' => $gs_layer->name));
       $ol_layer->data = array(
+        'attribution' =>  isset($gs_layer->data['attribution']) ? $gs_layer->data['attribution'] : NULL,
         'layer_type' => 'openlayers_layer_type_geoserver_wfs',
         'sld' => $sld,
         'url' => $url . $workspace . '/ows',

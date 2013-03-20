@@ -88,6 +88,13 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         ),
         '#default_value' => isset($this->data['strategy']) ? $this->data['strategy'] : 'bbox',
       ),
+      'attribution' => array(
+        '#type' => 'textfield',
+        '#title' => t('Attribution'),
+        '#description' => t('Attribution is displayed when the Attribution behavior has been added to the map.'),
+        '#maxlength' => 100,
+        '#default_value' => isset($this->data['attribution']) ? $this->data['attribution'] : ''
+      ),
       'sld' => array(
         '#type' => 'textarea',
         '#title' => t('SLD'),

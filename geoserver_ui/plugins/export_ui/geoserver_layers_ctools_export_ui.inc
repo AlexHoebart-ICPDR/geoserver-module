@@ -139,6 +139,13 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
         ),
       );
 
+      $layers_option['attribution'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Layer Attribution'),
+        '#default_value' => isset($layer->data['attribution']) ? $layer->data['attribution'] : '',
+        '#description' => t('The attribution of your layer.'),
+      );
+
       if (module_exists('openlayers')) {
         $openlayers = isset($layer->data['openlayers']) ? $layer->data['openlayers'] : array();
         $openlayers_layer = new openlayers_layer_type();

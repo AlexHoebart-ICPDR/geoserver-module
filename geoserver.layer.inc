@@ -529,6 +529,9 @@ abstract class geoserver_layer_type_feature_type extends geoserver_layer_type {
           'name' => $this->name,
         ),
         'enabled' => TRUE,
+        'attribution' => array(
+          'title' => isset($this->data['attribution']) ? $this->data['attribution'] : '',
+        ),
       ),
     );
   }
