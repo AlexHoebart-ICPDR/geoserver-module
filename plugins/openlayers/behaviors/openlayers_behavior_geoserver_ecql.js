@@ -19,7 +19,7 @@ Drupal.openlayers.addBehavior('openlayers_behavior_geoserver_ecql', function (da
 
       for (var i in fields) {
 
-        jQuery(fields[i]).change(function() {
+        jQuery(fields[i]).keyup(function() {
 
           var cql_filter = {
             'cql_filter': value.replace(new RegExp(fields[i]), jQuery(this).val())
