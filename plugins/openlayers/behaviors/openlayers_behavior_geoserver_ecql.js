@@ -17,12 +17,14 @@ Drupal.openlayers.addBehavior('openlayers_behavior_geoserver_ecql', function (da
       // Listen to change event for all given fields.
       var fields = value.match(/#(\w+)/g);
 
-      for (var i in fields) {
+      for (var i = 0; i < fields.length; i++) {
 
-        jQuery(fields[i]).keyup(function() {
+        var field = fields[i];
+
+        jQuery(field).keyup(function() {
 
           var cql_filter = {
-            'cql_filter': value.replace(new RegExp(fields[i]), jQuery(this).val())
+            'cql_filter': value.replace(new RegExp(field), jQuery(this).val())
           };
 
           if (layer instanceof OpenLayers.Layer.Vector) {
