@@ -138,19 +138,19 @@ function geoserver_schema() {
     'fields' => array(
       'table_schema' => array(
         'type' => 'varchar',
-        'length' => '32',
+        'length' => '64',
         'not null' => TRUE,
         'description' => 'Name of the database schema in which the table is located.',
       ),
       'table_name' => array(
         'type' => 'varchar',
-        'length' => '32',
+        'length' => '64',
         'not null' => TRUE,
         'description' => 'Name of the table to be published.',
       ),
       'pk_column' => array(
         'type' => 'varchar',
-        'length' => '32',
+        'length' => '64',
         'not null' => TRUE,
         'description' => 'Name of a column used to form the feauture IDs.',
       ),
@@ -175,33 +175,6 @@ function geoserver_schema() {
   );
 
   return $schema;
-}
-
-/**
- * Update OpenLayers configuration of GeoServer layers.
- */
-function geoserver_update_7101() {
-  foreach (geoserver_layers_load() as $key => $layer) {
-    if ($layer->export_type === EXPORT_IN_CODE) continue;
-    $openlayers = $layer->data['openlayers'];
-    if (isset($openlayers['wfs_strategy'])) {
-      $openlayers['wfs_data'] = isset($openlayers['wfs_data']) ? $openlayers['wfs_data'] : array();
-      $openlayers['wfs_data']['strategy'] = $openlayers['wfs_strategy'];
-      unset($openlayers['wfs_strategy']);
-    }
-    if (isset($openlayers['gwc_srs'])) {
-      $openlayers['gwc_data'] = isset($openlayers['gwc_data']) ? $openlayers['gwc_data'] : array();
-      $openlayers['gwc_data']['projection'] = array(substr($openlayers['gwc_srs'], 5));
-      unset($openlayers['gwc_srs']);
-    }
-    if (isset($openlayers['wms_srs'])) {
-      $openlayers['wms_data'] = isset($openlayers['wms_data']) ? $openlayers['wms_data'] : array();
-      $openlayers['wms_data']['projection'] = array(substr($openlayers['wms_srs'], 5));
-      unset($openlayers['wms_srs']);
-    }
-    $layer->data['openlayers'] = $openlayers;
-    ctools_export_crud_save('geoserver_layers', $layer);
-  }
 }
 
 /**
@@ -251,4 +224,55 @@ function geoserver_update_7100() {
   );
 
   db_create_table('geoserver_pk_metadata_table', $schema);
+}
+
+/**
+ * Update OpenLayers configuration of GeoServer layers.
+ */
+function geoserver_update_7101() {
+  foreach (geoserver_layers_load() as $key => $layer) {
+    if ($layer->export_type === EXPORT_IN_CODE) continue;
+    $openlayers = $layer->data['openlayers'];
+    if (isset($openlayers['wfs_strategy'])) {
+      $openlayers['wfs_data'] = isset($openlayers['wfs_data']) ? $openlayers['wfs_data'] : array();
+      $openlayers['wfs_data']['strategy'] = $openlayers['wfs_strategy'];
+      unset($openlayers['wfs_strategy']);
+    }
+    if (isset($openlayers['gwc_srs'])) {
+      $openlayers['gwc_data'] = isset($openlayers['gwc_data']) ? $openlayers['gwc_data'] : array();
+      $openlayers['gwc_data']['projection'] = array(substr($openlayers['gwc_srs'], 5));
+      unset($openlayers['gwc_srs']);
+    }
+    if (isset($openlayers['wms_srs'])) {
+      $openlayers['wms_data'] = isset($openlayers['wms_data']) ? $openlayers['wms_data'] : array();
+      $openlayers['wms_data']['projection'] = array(substr($openlayers['wms_srs'], 5));
+      unset($openlayers['wms_srs']);
+    }
+    $layer->data['openlayers'] = $openlayers;
+    ctools_export_crud_save('geoserver_layers', $layer);
+  }
+}
+
+/**
+ * Update column length of geoserver_pk_metadata_table.
+ */
+function geoserver_update_7102() {
+  db_change_field('geoserver_pk_metadata_table', 'table_schema', 'table_schema', array(
+    'type' => 'varchar',
+    'length' => '64',
+    'not null' => TRUE,
+    'description' => 'Name of the database schema in which the table is located.',
+  ));
+  db_change_field('geoserver_pk_metadata_table', 'table_name', 'table_name', array(
+    'type' => 'varchar',
+    'length' => '64',
+    'not null' => TRUE,
+    'description' => 'Name of the table to be published.',
+  ));
+  db_change_field('geoserver_pk_metadata_table', 'pk_column', 'pk_column', array(
+    'type' => 'varchar',
+    'length' => '64',
+    'not null' => TRUE,
+    'description' => 'Name of a column used to form the feauture IDs.',
+  ));
 }
