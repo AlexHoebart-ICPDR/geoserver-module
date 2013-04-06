@@ -394,7 +394,7 @@ abstract class geoserver_layer_type {
     }
   }
 
-  function load_source() {
+  function load_source($source) {
   }
 }
 
