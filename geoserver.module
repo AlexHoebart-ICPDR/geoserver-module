@@ -136,7 +136,9 @@ function geoserver_login($username, $password) {
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
 
   $file   = geoserver_get_cookiefile();
-  file_put_contents($file, '');
+  if (file_put_contents($file, '') === FALSE) {
+    return t("Could not write to geoserver cookiefile (!cookiefile)", array('!cookiefile' => $file));
+  }
 
 
   $login_url = $url_scheme . '://' . $host_port . $url['path'] . 'j_spring_security_check';
@@ -197,8 +199,8 @@ function geoserver_login($username, $password) {
   }
   else {
 
-    return t('Could not contact GeoServer at @login_url (@http_code).',
-      array('@login_url' => $login_url, '@http_code' => $http_code));
+    return t('Could not contact GeoServer at !login_url (!http_code).',
+      array('!login_url' => $login_url, '!http_code' => $http_code));
   }
 }
 
