@@ -35,7 +35,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
         request: 'GetFeature',
         // typeName equals layer name
         typeName: options.typeName,
-        outputFormat: 'json',
+        outputFormat: 'text/javascript',
         srsName: map.projection
       },
       filterToParams: function(filter, params) {
