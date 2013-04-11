@@ -230,6 +230,7 @@ function geoserver_update_7100() {
  * Update OpenLayers configuration of GeoServer layers.
  */
 function geoserver_update_7101() {
+  geoserver_update_7102();
   foreach (geoserver_layers_load() as $key => $layer) {
     if ($layer->export_type === EXPORT_IN_CODE) continue;
     $openlayers = $layer->data['openlayers'];
