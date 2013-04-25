@@ -13,7 +13,7 @@ function geoserver_openlayers_layers() {
   $ol_layers = array();
   $gs_layers = geoserver_layers_load();
   $gs_styles = geoserver_styles();
-  $url = variable_get('geoserver_url', '');
+  $url = geoserver_url();
   $workspace = variable_get('geoserver_workspace', '');
 
   foreach (array_values($gs_layers) as $gs_layer) {

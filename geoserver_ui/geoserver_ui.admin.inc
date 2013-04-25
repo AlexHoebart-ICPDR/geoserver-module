@@ -14,7 +14,7 @@
  */
 function geoserver_ui_admin_settings_form() {
 
-  $url        = variable_get('geoserver_url', '');
+  $url        = geoserver_url();
   $workspace  = variable_get('geoserver_workspace', '');
   $workspaces = array('');
 

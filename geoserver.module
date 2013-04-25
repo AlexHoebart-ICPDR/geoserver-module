@@ -107,6 +107,21 @@ function geoserver_user_login(&$edit, $account) {
   }
 }
 
+
+/**
+ * return a full url to a geoserver path
+ *
+ * @param string $path path to append to the url
+ * @return string
+ */
+function geoserver_url($path=NULL) {
+  $url = rtrim(variable_get('geoserver_url', ''), '/') . '/';
+  if ($path) {
+    $url .= ltrim($url, '/');
+  }
+  return $url;
+}
+
 /**
  * GeoServer login. Tries to authenticate the Drupal user with its Drupal
  *     credentials on GeoServer on Drupal login.
@@ -116,7 +131,7 @@ function geoserver_user_login(&$edit, $account) {
  * @return boolean|string Error message on failure, otherwise TRUE.
  */
 function geoserver_login($username, $password) {
-  $urlConfigured = variable_get('geoserver_url', '');
+  $urlConfigured = geoserver_url(); 
   if (empty($urlConfigured)) {
     return t('URL not configured.');
   }
@@ -228,7 +243,7 @@ function geoserver_page_alter(&$page) {
 function geoserver_user_logout($account) {
   geoserver_get('/j_spring_security_logout');
 
-  $url = parse_url(variable_get('geoserver_url', ''));
+  $url = parse_url(geoserver_url());
   $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
 
@@ -323,7 +338,7 @@ function geoserver_truncate($node) {
  */
 function geoserver_post($url, $content) {
 
-  $url = variable_get('geoserver_url', '') . trim($url, '/');
+  $url = geoserver_url($url);
   $parsed_url = parse_url($url);
 
   if (substr($parsed_url['path'], -3) == 'xml') {
@@ -383,7 +398,7 @@ function geoserver_post($url, $content) {
  */
 function geoserver_put($url, $content) {
 
-  $url = variable_get('geoserver_url', '') . trim($url, '/');
+  $url = geoserver_url($url);
 
   if (substr($url, -3) == 'xml') {
     $headers = array(
@@ -445,7 +460,7 @@ function geoserver_put($url, $content) {
  * @param String $url Path relative to GeoServer URL.
  */
 function geoserver_get($url, $uid = NULL) {
-  $url = variable_get('geoserver_url', '') . trim($url, '/');
+  $url = geoserver_url($url);
 
   // Use Drupal's HTTP layer instead of curl because the way PHP integrates
   // curl breaks curl's CURLOPT_FOLLOWLOCATION option if PHP's open_basedir
@@ -500,7 +515,7 @@ function geoserver_get($url, $uid = NULL) {
  */
 function geoserver_delete($url) {
 
-  $url = variable_get('geoserver_url', '') . trim($url, '/');
+  $url = geoserver_url($url);
 
   $request = curl_init($url);
 
