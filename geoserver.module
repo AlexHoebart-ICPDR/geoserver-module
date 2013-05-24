@@ -117,7 +117,7 @@ function geoserver_user_login(&$edit, $account) {
 function geoserver_url($path=NULL) {
   $url = rtrim(variable_get('geoserver_url', ''), '/') . '/';
   if ($path) {
-    $url .= ltrim($url, '/');
+    $url .= ltrim($path, '/');
   }
   return $url;
 }
@@ -333,12 +333,12 @@ function geoserver_truncate($node) {
 /**
  * Helper function to make a POST request.
  *
- * @param String $url Path relative to GeoServer URL.
+ * @param String $path Path relative to GeoServer URL.
  * @param String $content Payload.
  */
-function geoserver_post($url, $content) {
+function geoserver_post($path, $content) {
 
-  $url = geoserver_url($url);
+  $url = geoserver_url($path);
   $parsed_url = parse_url($url);
 
   if (substr($parsed_url['path'], -3) == 'xml') {
@@ -393,12 +393,12 @@ function geoserver_post($url, $content) {
 /**
  * Helper function to make a PUT request.
  *
- * @param String $url Path relative to GeoServer URL.
+ * @param String $path Path relative to GeoServer URL.
  * @param String $content Payload.
  */
-function geoserver_put($url, $content) {
+function geoserver_put($path, $content) {
 
-  $url = geoserver_url($url);
+  $url = geoserver_url($path);
 
   if (substr($url, -3) == 'xml') {
     $headers = array(
@@ -457,10 +457,10 @@ function geoserver_put($url, $content) {
 /**
  * Helper function to make a GET request.
  *
- * @param String $url Path relative to GeoServer URL.
+ * @param String $path Path relative to GeoServer URL.
  */
-function geoserver_get($url, $uid = NULL) {
-  $url = geoserver_url($url);
+function geoserver_get($path, $uid = NULL) {
+  $url = geoserver_url($path);
 
   // Use Drupal's HTTP layer instead of curl because the way PHP integrates
   // curl breaks curl's CURLOPT_FOLLOWLOCATION option if PHP's open_basedir
@@ -511,11 +511,11 @@ function geoserver_get($url, $uid = NULL) {
 /**
  * Helper function to make a DELETE request.
  *
- * @param String $url Path relative to GeoServer URL.
+ * @param String $path Path relative to GeoServer URL.
  */
-function geoserver_delete($url) {
+function geoserver_delete($path) {
 
-  $url = geoserver_url($url);
+  $url = geoserver_url($path);
 
   $request = curl_init($url);
 
