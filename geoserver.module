@@ -148,74 +148,83 @@ function geoserver_login($username, $password) {
   $url = parse_url($urlConfigured);
   $host_port = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   $url_scheme = empty($url['scheme']) ? 'http' : $url['scheme'];
-  $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
+  $geoserver_url = $url_scheme . '://' . $host_port . $url['path'];
 
   $file   = geoserver_get_cookiefile();
   if (file_put_contents($file, '') === FALSE) {
     return t("Could not write to geoserver cookiefile (!cookiefile)", array('!cookiefile' => $file));
   }
 
-
-  $login_url = $url_scheme . '://' . $host_port . $url['path'] . 'j_spring_security_check';
-  $request = curl_init($login_url);
-  curl_setopt($request, CURLOPT_POST, 3);
-  curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
+  $request = curl_init($geoserver_url . 'web/');
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_HEADER, TRUE);
-  $header = curl_exec($request);
+  curl_exec($request);
   $http_code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
 
-  preg_match('/Location:(.*?)\n/', $header, $matches);
-  $location_url = parse_url(array_pop($matches));
-  $location_path = isset($location_url['query']) ? $location_url['query'] : '';
   $cookies = geoserver_parse_cookiefile($file);
 
-  if (isset($cookies['JSESSIONID']) && strpos($location_path, 'error=true') === FALSE) {
+  if (isset($cookies['JSESSIONID'])) {
+    
+    $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
+    $request = curl_init($geoserver_url . 'j_spring_security_check');
+    curl_setopt($request, CURLOPT_POST, 3);
+    curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
+    curl_setopt($request, CURLOPT_COOKIE, 'JSESSIONID=' . $cookies['JSESSIONID']);
+    curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
+    curl_setopt($request, CURLOPT_HEADER, TRUE);
+    $header = curl_exec($request);
+    curl_close($request);
 
-    if (drupal_is_cli()) {
-      return TRUE;
-    }
+    preg_match('/Location:(.*?)\n/', $header, $matches);
+    $location_url = parse_url(array_pop($matches));
+    $location_path = isset($location_url['query']) ? $location_url['query'] : '';
+  
+    if (strpos($location_path, 'error=true') === FALSE) {
 
-    $expire = ini_get('session.cookie_lifetime') ? ini_get('session.cookie_lifetime') : -1;
-    if ($_SERVER['HTTP_HOST']!==$url['host']) {
+      if (drupal_is_cli()) {
+        return TRUE;
+      }
+
+      $expire = ini_get('session.cookie_lifetime') ? ini_get('session.cookie_lifetime') : -1;
+      if ($_SERVER['HTTP_HOST']!==$url['host']) {
         // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
         // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
         $geoserverSetCookie = url($urlConfigured . 'ows', array(
-            'query' => array(
-                'service' => 'cookie',
-                'request' => 'setCookie',
-                'version' => '1.0.0',
-                'name' => 'JSESSIONID',
-                'value' => $cookies['JSESSIONID'],
-                // Seconds after current time
-                'max-age' => $expire,
-                'path' => $url['path'],
-                'domain' => $url['host']
-            )
+          'query' => array(
+            'service' => 'cookie',
+            'request' => 'setCookie',
+            'version' => '1.0.0',
+            'name' => 'JSESSIONID',
+            'value' => $cookies['JSESSIONID'],
+            // Seconds after current time
+            'max-age' => $expire,
+            'path' => $url['path'],
+            'domain' => $url['host']
+          )
         ));
         // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
         $_SESSION['geoserverSetCookie'] = $geoserverSetCookie;
         return TRUE;
-    }
-    elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire===-1)?0:(time()+$expire), $url['path'])) {
+      }
+      elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire===-1)?0:(time()+$expire), $url['path'])) {
         // Cookie written without requiring extensions to be present in GeoServer
         return TRUE;
+      }
+      else {
+        return t('Unable to set Cookie.');
+      }
     }
     else {
-        return t('Unable to set Cookie.');
+
+      return t('Wrong user credentials.');
     }
-  }
-  elseif (isset($cookies['JSESSIONID'])) {
-
-    return t('Wrong user credentials.');
-
   }
   else {
 
-    return t('Could not contact GeoServer at !login_url (!http_code).',
-      array('!login_url' => $login_url, '!http_code' => $http_code));
+    return t('Could not contact GeoServer at !geoserver_url (!http_code).',
+      array('!geoserver_url' => $geoserver_url, '!http_code' => $http_code));
   }
 }
 
