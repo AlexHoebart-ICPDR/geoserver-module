@@ -254,7 +254,9 @@ function geoserver_user_logout($account) {
 
   $url = parse_url(geoserver_url());
   $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
-  setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
+  if (!drupal_is_cli()) {
+    setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
+  }
 
   $cookiefile = geoserver_get_cookiefile();
   if (file_exists($cookiefile)) {
