@@ -183,7 +183,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
                 'bbox' => 'Bounding Box',
                 'fixed' => 'Fixed',
               ),
-              '#default_value' => isset($wfs_layer->data['strategy']) ? $wfs_layer->data['strategy'] : 'bbox',
+              '#default_value' => isset($wfs_data['data']['strategy']) ? $wfs_data['data']['strategy'] : 'bbox',
               '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
             ),
           ) + $openlayers_layer->options_form((object)$wfs_data),
