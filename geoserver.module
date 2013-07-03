@@ -584,11 +584,11 @@ function geoserver_delete($path) {
  * @return string Path of GeoServer's session cookie.
  */
 function geoserver_get_cookiefile($uid = NULL) {
-  if (empty($uid)) {
+  if (is_null($uid)) {
     global $user;
     $uid = $user->uid;
   }
-  return file_directory_temp() . '/geoserver_session_user_' . $uid;
+  return file_directory_temp() . '/geoserver_session_' . getmyuid() . '_user_' . $uid;
 }
 
 /**
