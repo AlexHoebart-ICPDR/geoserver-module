@@ -247,18 +247,39 @@ function geoserver_page_alter(&$page) {
 
 
 /**
- * Implements hook_user_login().
+ * Implements hook_user_logout().
  */
 function geoserver_user_logout($account) {
-  geoserver_get('/j_spring_security_logout');
+  geoserver_get('/j_spring_security_logout', $account->uid);
 
-  $url = parse_url(geoserver_url());
-  $url['host'] = empty($url['port']) ? $url['host'] : $url['host'] . ':' . $url['port'];
   if (!drupal_is_cli()) {
-    setcookie('JSESSIONID', '', 1, $url['path'], $url['host']);
+    $urlConfigured = geoserver_url(); 
+    $url = parse_url($urlConfigured);
+    if ($_SERVER['HTTP_HOST']!==$url['host']) {
+      // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
+      // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
+      $geoserverUnsetCookie = url($urlConfigured . 'ows', array(
+        'query' => array(
+          'service' => 'cookie',
+          'request' => 'setCookie',
+          'version' => '1.0.0',
+          'name' => 'JSESSIONID',
+          'value' => '',
+          // Seconds after current time
+          'max-age' => 1,
+          'path' => $url['path'],
+          'domain' => $url['host']
+        )
+      ));
+      // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
+      $_SESSION['geoserverSetCookie'] = $geoserverUnsetCookie;
+    }
+    else {
+      setcookie('JSESSIONID', '', 1, $url['path']);
+    }
   }
 
-  $cookiefile = geoserver_get_cookiefile();
+  $cookiefile = geoserver_get_cookiefile($account->uid);
   if (file_exists($cookiefile)) {
     @unlink($cookiefile);
   }
