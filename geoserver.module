@@ -588,7 +588,12 @@ function geoserver_get_cookiefile($uid = NULL) {
     global $user;
     $uid = $user->uid;
   }
-  return file_directory_temp() . '/geoserver_session_' . getmyuid() . '_user_' . $uid;
+ 
+  $systemUserPart = "x";
+  if (function_exists('posix_getuid')) {
+    $systemUserPart = posix_getuid();
+  }
+  return file_directory_temp() . '/geoserver_session_' . $systemUserPart . '_user_' . $uid;
 }
 
 /**
@@ -692,3 +697,5 @@ function geoserver_parse_cookiefile($file) {
   return $cookies;
 }
 
+
+// vim: ft=php tabstop=2 shiftwidth=2
