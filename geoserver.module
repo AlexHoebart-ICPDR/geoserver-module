@@ -593,7 +593,10 @@ function geoserver_get_cookiefile($uid = NULL) {
   if (function_exists('posix_getuid')) {
     $systemUserPart = posix_getuid();
   }
-  return file_directory_temp() . '/geoserver_session_' . $systemUserPart . '_user_' . $uid;
+
+  $workspace = variable_get('geoserver_workspace', 'drupal');
+
+  return file_directory_temp() . '/geoserver_session_' . $systemUserPart . '_' . $workspace . '_' . $uid;
 }
 
 /**
