@@ -28,9 +28,11 @@ function geoserver_ui_admin_settings_form() {
           $workspaces[$ws->name] = $ws->name;
         }
       }
-    } catch (geoserver_resource_exception $e) {
+    } catch (geoserver_resource_exception $exc) {
       $workspace_type = 'textfield';
-      drupal_set_message(t('Failed to get list of workspaces from GeoServer.'), 'error');
+      drupal_set_message(t('Failed to get list of workspaces from GeoServer. See the log for details.'), 'error');
+      watchdog('geoserver', 'Failed to get list of workspaces from GeoServer: @exception',
+        array('@exception' => $exc->getMessage()), WATCHDOG_ERROR);
     }
   }
 
