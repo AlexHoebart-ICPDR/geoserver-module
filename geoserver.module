@@ -518,10 +518,6 @@ function geoserver_get($path, $uid = NULL) {
           'Cookie' => implode('; ', $requestCookies)
       )
   ));
-
-  $result = new geoserver_httpresponse();
-  $result->url = $url;
-  $result->data = $response->data;
   
   // Drupal uses negatives codes to denote errors in parsing the URI.
   if ($response->code<0) {
@@ -531,14 +527,18 @@ function geoserver_get($path, $uid = NULL) {
     );
   }
   
-  $result->code = $response->code;
-  if ($result->code<200 || $result->code>299) {
+  if ($response->code<200 || $response->code>299) {
     throw new geoserver_resource_http_exception(
       isset($response->redirect_url) ? $response->redirect_url : $url,
       $response->code,
-      $response->data
+      isset($response->data) ? $response->data : NULL
     );
   }
+
+  $result = new geoserver_httpresponse();
+  $result->url = $url;
+  $result->code = $response->code;
+  $result->data = $response->data;
 
   if (substr($result->url, -4) == 'json' && $result->code == 200) {
     $result->data = json_decode($result->data);
