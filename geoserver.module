@@ -154,28 +154,21 @@ function geoserver_login($username, $password) {
   if (file_put_contents($file, '') === FALSE) {
     return t("Could not write to geoserver cookiefile (!cookiefile)", array('!cookiefile' => $file));
   }
-
-  $request = curl_init($geoserver_url . 'web/');
+    
+  $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
+  $request = curl_init($geoserver_url . 'j_spring_security_check');
+  curl_setopt($request, CURLOPT_POST, TRUE);
+  curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
   curl_setopt($request, CURLOPT_COOKIEJAR, $file);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_HEADER, TRUE);
-  curl_exec($request);
+  $header = curl_exec($request);
   $http_code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   curl_close($request);
 
   $cookies = geoserver_parse_cookiefile($file);
 
   if (isset($cookies['JSESSIONID'])) {
-    
-    $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
-    $request = curl_init($geoserver_url . 'j_spring_security_check');
-    curl_setopt($request, CURLOPT_POST, 3);
-    curl_setopt($request, CURLOPT_POSTFIELDS, $fields);
-    curl_setopt($request, CURLOPT_COOKIE, 'JSESSIONID=' . $cookies['JSESSIONID']);
-    curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($request, CURLOPT_HEADER, TRUE);
-    $header = curl_exec($request);
-    curl_close($request);
 
     preg_match('/Location:(.*?)\n/', $header, $matches);
     $location_url = parse_url(array_pop($matches));
