@@ -15,7 +15,7 @@ Drupal.openlayers.addBehavior('openlayers_behavior_geoserver_ecql', function (da
     if (typeof layer != 'undefined' && value != '') {
       
       // Listen to change event for all given fields.
-      var fields = value.match(/#(\w+)/g);
+      var fields = value.match(/#-?[_a-zA-Z]+[_a-zA-Z0-9-]*/g);
 
       for (var i = 0; i < fields.length; i++) {
 
