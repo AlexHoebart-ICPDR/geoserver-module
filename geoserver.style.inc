@@ -140,12 +140,3 @@ function geoserver_style_status($style) {
     return GEOSERVER_STATUS_FOUND_DIFF;
   }
 }
-
-
-function geoserver_styles_features_rebuild($module_name) {
-
-  dvm($module_name);
-  //var_dump($module_name);die;
-  dvm('geoserver_styles_features_rebuild');
-
-}
