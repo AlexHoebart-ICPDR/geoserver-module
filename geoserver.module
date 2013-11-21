@@ -612,6 +612,7 @@ function geoserver_modules_enabled($modules) {
       if (isset($feature->info['features']['geoserver_styles'])) {
         $workspace = variable_get('geoserver_workspace', '');
         $styles = module_invoke($module, 'geoserver_styles');
+        $styles = is_array($styles) ? $styles : array();
         foreach ($styles as $style) {
           try {
             geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
@@ -648,6 +649,7 @@ function geoserver_modules_disabled($modules) {
       if (isset($feature->info['features']['geoserver_styles'])) {
         $workspace = variable_get('geoserver_workspace', '');
         $styles = module_invoke($module, 'geoserver_styles');
+        $styles = is_array($styles) ? $styles : array();
         foreach ($styles as $style) {
           try {
             geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
@@ -682,9 +684,9 @@ function geoserver_parse_cookiefile($file) {
   $cookies = array();
   $lines = @file($file);
   if($lines===FALSE) {
-    drupal_set_message(
+    watchdog('geoserver', 
       t("Couldn't read cookies for GeoServer. Did your session expire?"),
-      'error'
+      WATCHDOG_ERROR
     );
     return array();
   }
