@@ -413,7 +413,7 @@ function geoserver_post($path, $content) {
   }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   if ($result->code<200 || $result->code>299) {
-    $e = new geoserver_resource_curl_exception($request);
+    $e = new geoserver_resource_curl_exception($request, $result->data);
     curl_close($request);
     throw $e;
   }
@@ -477,7 +477,7 @@ function geoserver_put($path, $content) {
   }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
   if ($result->code<200 || $result->code>299) {
-    $e = new geoserver_resource_curl_exception($request);
+    $e = new geoserver_resource_curl_exception($request, $result->data);
     curl_close($request);
     throw $e;
   }
