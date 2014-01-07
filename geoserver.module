@@ -686,6 +686,7 @@ function geoserver_parse_cookiefile($file) {
   if($lines===FALSE) {
     watchdog('geoserver', 
       t("Couldn't read cookies for GeoServer. Did your session expire?"),
+      NULL, 
       WATCHDOG_ERROR
     );
     return array();
