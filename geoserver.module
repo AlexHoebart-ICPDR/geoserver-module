@@ -100,8 +100,8 @@ function geoserver_user_login(&$edit, $account) {
 
     if ($geoserver_login !== TRUE) {
       drupal_set_message(t("Failed to authenticate you with GeoServer. Some map services won't be available."), 'error');
-      watchdog('geoserver', 'Could not authenticate %username at GeoServer: %reason',
-          array('%username' => urlencode($edit['values']['name']), '%reason' => $geoserver_login),
+      watchdog('geoserver', 'Could not authenticate %username at GeoServer: !reason',
+          array('%username' => urlencode($edit['values']['name']), '!reason' => $geoserver_login),
           WATCHDOG_ERROR);
     }
   }
@@ -168,54 +168,58 @@ function geoserver_login($username, $password) {
 
   $cookies = geoserver_parse_cookiefile($file);
 
-  if (isset($cookies['JSESSIONID'])) {
+  if ($http_code >= 200 && $http_code < 400) {
 
-    preg_match('/Location:(.*?)\n/', $header, $matches);
-    $location_url = parse_url(array_pop($matches));
-    $location_path = isset($location_url['query']) ? $location_url['query'] : '';
-  
-    if (strpos($location_path, 'error=true') === FALSE) {
+    if (isset($cookies['JSESSIONID'])) {
 
-      if (drupal_is_cli()) {
-        return TRUE;
-      }
+      preg_match('/Location:(.*?)\n/', $header, $matches);
+      $location_url = parse_url(array_pop($matches));
+      $location_path = isset($location_url['query']) ? $location_url['query'] : '';
 
-      $expire = ini_get('session.cookie_lifetime') ? ini_get('session.cookie_lifetime') : -1;
-      if ($_SERVER['HTTP_HOST']!==$url['host']) {
-        // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
-        // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
-        $geoserverSetCookie = url($urlConfigured . 'ows', array(
-          'query' => array(
-            'service' => 'cookie',
-            'request' => 'setCookie',
-            'version' => '1.0.0',
-            'name' => 'JSESSIONID',
-            'value' => $cookies['JSESSIONID'],
-            // Seconds after current time
-            'max-age' => $expire,
-            'path' => $url['path'],
-            'domain' => $url['host']
-          )
-        ));
-        // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
-        $_SESSION['geoserverSetCookie'] = $geoserverSetCookie;
-        return TRUE;
-      }
-      elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire===-1)?0:(time()+$expire), $url['path'])) {
-        // Cookie written without requiring extensions to be present in GeoServer
-        return TRUE;
+      if (strpos($location_path, 'error=true') === FALSE) {
+
+        if (drupal_is_cli()) {
+          return TRUE;
+        }
+
+        $expire = ini_get('session.cookie_lifetime') ? ini_get('session.cookie_lifetime') : -1;
+        if ($_SERVER['HTTP_HOST']!==$url['host']) {
+          // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
+          // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
+          $geoserverSetCookie = url($urlConfigured . 'ows', array(
+            'query' => array(
+              'service' => 'cookie',
+              'request' => 'setCookie',
+              'version' => '1.0.0',
+              'name' => 'JSESSIONID',
+              'value' => $cookies['JSESSIONID'],
+              // Seconds after current time
+              'max-age' => $expire,
+              'path' => $url['path'],
+              'domain' => $url['host']
+            )
+          ));
+          // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
+          $_SESSION['geoserverSetCookie'] = $geoserverSetCookie;
+          return TRUE;
+        }
+        elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire===-1)?0:(time()+$expire), $url['path'])) {
+          // Cookie written without requiring extensions to be present in GeoServer
+          return TRUE;
+        }
+        else {
+          return t('Unable to set Cookie.');
+        }
       }
       else {
-        return t('Unable to set Cookie.');
+        return t('Wrong user credentials.');
       }
     }
     else {
-
-      return t('Wrong user credentials.');
+      return t('GeoServer doesn\'t return a HTTP session. Please <a href="https://drupal.org/node/1504464#geoserver-authentication">check the configuration</a>.');
     }
   }
   else {
-
     return t('Could not contact GeoServer at !geoserver_url (!http_code).',
       array('!geoserver_url' => $geoserver_url, '!http_code' => $http_code));
   }
