@@ -707,5 +707,82 @@ function geoserver_parse_cookiefile($file) {
   return $cookies;
 }
 
+/**
+ * Configure GeoServer workspace and datastore.
+ *
+ * @param string $geoserver_workspace Name of GeoServer workspace.
+ */
+function geoserver_configure_workspace($geoserver_workspace) {
+
+  try {
+    // Check if workspace is already available.
+    geoserver_get('rest/workspaces/' . $geoserver_workspace . '.json');
+  }
+  catch (geoserver_resource_exception $exc) {
+
+    // Workspace isn't available. Try to create workspace.
+    $content = array('workspace' => array('name' => $geoserver_workspace));
+    try {
+      geoserver_post('rest/workspaces.json', $content);
+    }
+    catch (geoserver_resource_exception $exc) {
+      return t('Could not create GeoServer workspace: !reason', 
+        array('!reason' => $exc->getMessage()));
+    }
+  }
+
+  try {
+    // Check if datastore is already available.
+    geoserver_get('rest/workspaces/' . $geoserver_workspace . '/datastores/cartaro.json');
+  }
+  catch (geoserver_resource_exception $exc) {
+
+    // Create PostGIS datastore.
+    $database = $GLOBALS['databases']['default']['default'];
+    $database['port'] = empty($database['port']) ? '5432' : $database['port'];
+    $content = array(
+      'dataStore' => array(
+        'name' => 'cartaro',
+        'description' => 'Default PostGIS datastore of Cartaro.',
+        'type' => 'PostGIS',
+        'enabled' => TRUE,
+        'workspace' => $geoserver_workspace,
+        'connectionParameters' => array(
+          'entry' => array(
+            array('@key' => 'Connection timeout',   '$' => '20'),
+            array('@key' => 'port',                 '$' => $database['port']),
+            array('@key' => 'passwd',               '$' => $database['password']),
+            array('@key' => 'dbtype',               '$' => 'postgis'),
+            array('@key' => 'host',                 '$' => $database['host']),
+            array('@key' => 'validate connections', '$' => 'false'),
+            array('@key' => 'max connections',      '$' => '10'),
+            array('@key' => 'database',             '$' => $database['database']),
+            array('@key' => 'namespace',            '$' => $geoserver_workspace),
+            array('@key' => 'schema',               '$' => 'public'),
+            array('@key' => 'Loose bbox',           '$' => 'true'),
+            array('@key' => 'Expose primary keys',  '$' => 'false'),
+            array('@key' => 'fetch size',           '$' => '1000'),
+            array('@key' => 'Max open prepared statements', '$' => '50'),
+            array('@key' => 'preparedStatements',   '$' => 'false'),
+            array('@key' => 'Estimated extends',    '$' => 'true'),
+            array('@key' => 'user',                 '$' => $database['username']),
+            array('@key' => 'min connections',      '$' => '1'),
+            array('@key' => 'Primary key metadata table', '$' => 'public.geoserver_pk_metadata_table'),
+          ),
+        ),
+      ),
+    );
+    try {
+      geoserver_post('rest/workspaces/' . $geoserver_workspace . '/datastores.json', $content);
+    }
+    catch (geoserver_resource_exception $exc) {
+      return t('Could not create GeoServer datastore in workspace: %reason',
+        array('reason' => $exc->getMessage()));
+    }
+  }
+
+  return TRUE;
+}
+
 
 // vim: ft=php tabstop=2 shiftwidth=2
