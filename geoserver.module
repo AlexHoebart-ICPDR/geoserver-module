@@ -114,12 +114,27 @@ function geoserver_user_login(&$edit, $account) {
  * @param string $path path to append to the url
  * @return string
  */
-function geoserver_url($path=NULL) {
-  $url = rtrim(variable_get('geoserver_url', ''), '/') . '/';
-  if ($path) {
-    $url .= ltrim($path, '/');
+function geoserver_url($geoserver_path=NULL) {
+
+  static $url;
+  if (!isset($url)) {
+    $url = parse_url(variable_get('geoserver_url', ''));
+
+    // allow schemeless and absolute geoserver_url
+    $scheme = isset($url['scheme']) ? $url['scheme'] : (isset($_SERVER['HTTPS']) ? 'https' : 'http');
+    $host = isset($url['host']) ? $url['host'] : $_SERVER['HTTP_HOST'];
+    $port = isset($url['port']) ? $url['port'] : $_SERVER['SERVER_PORT'];
+    $path = isset($url['path']) ? $url['path'] : $GLOBALS['base_path'];
+
+    // allow relative geoserver_url
+    if (strpos($path, '/') !== 0) {
+      $path = $GLOBALS['base_path'] . $path;
+    }
+
+    $url = $scheme.'://'.$host.':'.$port.$path;
   }
-  return $url;
+
+  return isset($geoserver_path) ? rtrim($url, '/').'/'.ltrim($geoserver_path, '/') : $url;
 }
 
 /**
