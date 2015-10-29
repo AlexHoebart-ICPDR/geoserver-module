@@ -137,11 +137,12 @@ function geoserver_url($geoserver_path=NULL) {
   static $url;
   if (!isset($url)) {
     $url = parse_url(variable_get('geoserver_url', ''));
+    $base_url = parse_url($GLOBALS['base_url']);
 
     // allow schemeless and absolute geoserver_url
-    $scheme = isset($url['scheme']) ? $url['scheme'] : (isset($_SERVER['HTTPS']) ? 'https' : 'http');
+    $scheme = isset($url['scheme']) ? $url['scheme'] : $GLOBALS['is_https'] ? 'https' : 'http';
     $host = isset($url['host']) ? $url['host'] : $_SERVER['HTTP_HOST'];
-    $port = isset($url['port']) ? $url['port'] : $_SERVER['SERVER_PORT'];
+    $port = isset($url['port']) ? $url['port'] : isset($base_url['port']) ? $base_url['port'] : '';
     $path = isset($url['path']) ? $url['path'] : $GLOBALS['base_path'];
 
     // allow relative geoserver_url
