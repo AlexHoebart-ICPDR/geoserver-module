@@ -113,14 +113,14 @@ function geoserver_user_login(&$edit, $account) {
  * @return boolean
  */
 function geoserver_check_jsonp() {
-  $result = geoserver_get('ows?service=WFS&request=GetCapabilities');
-  if ($result->code === '200') {
+  try {
+    $result = geoserver_get('ows?service=WFS&request=GetCapabilities');
     if (strpos($result->data, 'text/javascript')) {
       return TRUE;
     } else {
       return FALSE;
     }
-  } else {
+  } catch (geoserver_resource_exception $exc) {
     // Do nothing if WFS capablities is not available,
     // because access might be blocked.
   }
