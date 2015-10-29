@@ -107,6 +107,24 @@ function geoserver_user_login(&$edit, $account) {
   }
 }
 
+/**
+ * Check if JSONP is enabled by searching WFS capabilities for "text/javascript".
+ *
+ * @return boolean
+ */
+function geoserver_check_jsonp() {
+  $result = geoserver_get('ows?service=WFS&request=GetCapabilities');
+  if ($result->code === '200') {
+    if (strpos($result->data, 'text/javascript')) {
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+  } else {
+    // Do nothing if WFS capablities is not available,
+    // because access might be blocked.
+  }
+}
 
 /**
  * return a full url to a geoserver path

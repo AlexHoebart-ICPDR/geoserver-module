@@ -36,6 +36,10 @@ function geoserver_ui_admin_settings_form() {
     }
   }
 
+  if (geoserver_check_jsonp() === FALSE) {
+    drupal_set_message(t('JSONP is disabled and some services might not work. See the GeoServer module documentation on <a href="@link">how to enable JSONP</a>.', array('@link' => 'https://www.drupal.org/node/1504464')), 'warning');
+  }
+
   $styles = geoserver_styles();
   $layers = geoserver_layers_load();
 
