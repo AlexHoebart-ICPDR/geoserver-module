@@ -47,9 +47,9 @@ class openlayers_behavior_geoserver_ecql extends openlayers_behavior {
           '#type' => 'textfield',
           '#title' => t('CQL Filter for %layer', array('%layer' => $name)),
           '#default_value' => (isset($defaults[$name])) ? $defaults[$name] : '',
-          '#description' => t('See the GeoServer <a href="@cql_reference">CQL reference</a> 
-          and <a href="@cql_tutorial">CQL tutorial</a> on how to write filters. 
-          Use #example as placeholder for IDs of form field value. 
+          '#description' => t('See the GeoServer <a href="@cql_reference">CQL reference</a>
+          and <a href="@cql_tutorial">CQL tutorial</a> on how to write filters.
+          Use #example as placeholder for IDs of form field value.
           Placeholder get replaced on the change event of the form field.',
           array(
             '@cql_reference' => 'http://docs.geoserver.org/stable/en/user/filter/ecql_reference.html',
@@ -66,7 +66,7 @@ class openlayers_behavior_geoserver_ecql extends openlayers_behavior {
    * Render.
    */
   function render(&$map) {
-    drupal_add_js(drupal_get_path('module', 'geoserver') .
+    backdrop_add_js(backdrop_get_path('module', 'geoserver') .
       '/plugins/openlayers/behaviors/openlayers_behavior_geoserver_ecql.js');
     return $this->options;
   }

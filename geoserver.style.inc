@@ -48,10 +48,10 @@ function geoserver_style_load($name, $reset = FALSE) {
  *   The style object to save.
  */
 function geoserver_style_save(&$style) {
-  $workspace = variable_get('geoserver_workspace', '');
-  $update = ($style->export_type & EXPORT_IN_DATABASE) ? array('name') : array();
+  $workspace = config_get('geoserver.settings', 'geoserver_workspace');
+  $update = ($style->export_type & EXPORT_IN_DATABASE)?array('name') : array();
   $style->export_type = EXPORT_IN_DATABASE;
-  $result = drupal_write_record('geoserver_styles', $style, $update);
+  $result = backdrop_write_record('geoserver_styles', $style, $update);
 
   if (!$result) {
     return FALSE;
@@ -62,7 +62,7 @@ function geoserver_style_save(&$style) {
       geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
     }
     catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Error when attempting to create style %name: %message', 
+      watchdog('geoserver', 'Error when attempting to create style %name: %message',
         array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
       return FALSE;
     }
@@ -70,8 +70,9 @@ function geoserver_style_save(&$style) {
   else {
     try {
       geoserver_put("rest/workspaces/$workspace/styles/{$style->name}.sld", $style->data);
-    } catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Error when attempting to update style %name: %message', 
+    }
+    catch (geoserver_resource_exception $exc) {
+      watchdog('geoserver', 'Error when attempting to update style %name: %message',
         array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
       return FALSE;
     }
@@ -79,8 +80,12 @@ function geoserver_style_save(&$style) {
   return TRUE;
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function geoserver_style_delete(&$style) {
-  $workspace = variable_get('geoserver_workspace', '');
+  $workspace = config_get('geoserver.settings', 'geoserver_workspace');
   $result = db_delete('geoserver_styles')
     ->condition('name', is_object($style) ? $style->name : $style)
     ->execute();
@@ -91,7 +96,8 @@ function geoserver_style_delete(&$style) {
 
   try {
     geoserver_delete("rest/workspaces/$workspace/styles/{$style->name}?purge=true");
-  } catch (geoserver_resource_exception $exc) {
+  }
+  catch (geoserver_resource_exception $exc) {
     watchdog('geoserver', 'Error when attempting to delete style %name: %message',
       array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
     // Note: ctools doesn't take FALSE return values of delete callbacks into account yet.
@@ -104,7 +110,7 @@ function geoserver_style_delete(&$style) {
       geoserver_post("rest/workspaces/$workspace/styles.sld?name={$style->name}", $style->data);
     }
     catch (geoserver_resource_exception $exc) {
-      watchdog('geoserver', 'Error when attempting to revert style %name: %message', 
+      watchdog('geoserver', 'Error when attempting to revert style %name: %message',
         array('%name' => $style->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
       return FALSE;
     }
@@ -126,10 +132,11 @@ function geoserver_style_status($style) {
     $style = geoserver_style_load($style);
   }
 
-  $workspace = variable_get('geoserver_workspace', '');
+  $workspace = config_get('geoserver.settings', 'geoserver_workspace');
   try {
     $result = geoserver_get("rest/workspaces/$workspace/styles/{$style->name}.sld");
-  } catch (geoserver_resource_http_exception $exc) {
+  }
+  catch (geoserver_resource_http_exception $exc) {
     return GEOSERVER_STATUS_NOT_FOUND;
   }
 

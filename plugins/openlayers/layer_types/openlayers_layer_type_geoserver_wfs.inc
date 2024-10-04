@@ -39,9 +39,10 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
    * Provide initial values for options.
    */
   function options_init() {
+    $config = config('geoserver.settings');
 
-    $url = variable_get('geoserver_url', '');
-    $workspace = variable_get('geoserver_workspace', '');
+    $url = $config->get('geoserver_url');
+    $workspace = $config->get('geoserver_workspace');
 
     return array(
       'layer_type' => 'openlayers_layer_type_geoserver_wfs',
@@ -49,7 +50,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
       'url' => $url . $workspace . '/ows',
       'projection' => array('EPSG:4326', 'EPSG:3857'),
       'isBaseLayer' => FALSE,
-      'typeName' => '', 
+      'typeName' => '',
       'strategy' => 'bbox',
       'vector' => TRUE,
       'formatOptions' => array(
@@ -69,14 +70,14 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         '#title' => t('URL'),
         '#description' => t('The URL of the WFS server. For example: http://your_hostname/geoserver/your_workspace_name/ows'),
         '#maxlength' => 1024,
-        '#default_value' => isset($this->data['url']) ? $this->data['url'] : ''
+        '#default_value' => isset($this->data['url']) ? $this->data['url'] : '',
       ),
       'typeName' => array(
         '#type' => 'textfield',
         '#title' => t('Type Name'),
         '#description' => t('The typename of the features requested. Equals the layer name in GeoServer.'),
         '#maxlength' => 100,
-        '#default_value' => isset($this->data['typeName']) ? $this->data['typeName'] : ''
+        '#default_value' => isset($this->data['typeName']) ? $this->data['typeName'] : '',
       ),
       'strategy' => array(
         '#type' => 'select',
@@ -93,17 +94,17 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
         '#title' => t('Attribution'),
         '#description' => t('Attribution is displayed when the Attribution behavior has been added to the map.'),
         '#maxlength' => 100,
-        '#default_value' => isset($this->data['attribution']) ? $this->data['attribution'] : ''
+        '#default_value' => isset($this->data['attribution']) ? $this->data['attribution'] : '',
       ),
       'sld' => array(
         '#type' => 'textarea',
         '#title' => t('SLD'),
         '#description' => t('Styled Layer Descriptor (SLD). Can be left empty to use default styling.'),
-        '#default_value' => isset($this->data['sld']) ? $this->data['sld'] : ''
+        '#default_value' => isset($this->data['sld']) ? $this->data['sld'] : '',
       ),
       'layer_type' => array(
         '#type' => 'hidden',
-        '#value' => 'openlayers_layer_type_geoserver_wfs'
+        '#value' => 'openlayers_layer_type_geoserver_wfs',
       ),
     );
   }
@@ -112,7 +113,7 @@ class openlayers_layer_type_geoserver_wfs extends openlayers_layer_type {
    * Render.
    */
   function render(&$map) {
-    drupal_add_js(drupal_get_path('module', 'geoserver') .
+    backdrop_add_js(backdrop_get_path('module', 'geoserver') .
       '/plugins/openlayers/layer_types/openlayers_layer_type_geoserver_wfs.js');
   }
 }

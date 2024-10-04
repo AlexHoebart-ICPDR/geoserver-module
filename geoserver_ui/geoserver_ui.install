@@ -9,7 +9,7 @@
  */
 
 /**
- * Implements of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function geoserver_ui_uninstall() {
   // Get module variables.
@@ -17,6 +17,7 @@ function geoserver_ui_uninstall() {
     array(':pattern' => db_like('geoserver_ui_') . '%'))->fetchAll();
   // Remove variables.
   foreach ($variables as $variable) {
+    // TODO This variable was probably removed in Backdrop without replacement.
     variable_del($variable);
   }
 }

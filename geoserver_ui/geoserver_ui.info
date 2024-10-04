@@ -1,7 +1,9 @@
 name = GeoServer UI
 description = Provides a user interface to manage a GeoServer instance.
 package = Geodata
-core = 7.x
+backdrop = 1.x
+type = module
 dependencies[] = geoserver
 
 configure = admin/structure/geoserver
+

@@ -6,11 +6,11 @@
 /**
  * OpenLayers GeoServer ECQL Behavior
  */
-Drupal.openlayers.addBehavior('openlayers_behavior_geoserver_ecql', function (data, options) {
+Backdrop.openlayers.addBehavior('openlayers_behavior_geoserver_ecql', function (data, options) {
 
   jQuery.each(options, function(name, value) {
 
-    var layer = data.openlayers.getLayersBy('drupalID', name)[0];
+    var layer = data.openlayers.getLayersBy('backdropID', name)[0];
 
     if (typeof layer != 'undefined' && value != '') {
       

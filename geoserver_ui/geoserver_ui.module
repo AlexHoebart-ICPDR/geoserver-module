@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Main Drupal module file for the GeoServer UI module
+ * Main Backdrop module file for the GeoServer UI module
  *
  * @ingroup geoserver
  */
@@ -17,7 +17,7 @@ function geoserver_ui_menu() {
   $items['admin/structure/geoserver'] = array(
     'title' => 'GeoServer',
     'description' => 'Manage a GeoServer instance.',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('geoserver_ui_admin_settings_form'),
     'access arguments' => array('administer geoserver'),
     'file' => 'geoserver_ui.admin.inc',
@@ -28,17 +28,17 @@ function geoserver_ui_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -20,
   );
-
+/*
   // Layer-type-wide settings form.
   $items['admin/structure/geoserver/layers/settings'] = array(
     'title' => 'Settings',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('geoserver_ui_layers_settings'),
     'access arguments' => array('administer geoserver'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
   );
-  
+*/
   return $items;
 }
 
@@ -56,8 +56,8 @@ function geoserver_ui_ctools_plugin_directory($module, $plugin) {
  */
 function geoserver_ui_layers_settings($form_state, $layer = NULL) {
   $form = array();
-  ctools_include('plugins');
-  $layer_types = ctools_get_plugins('geoserver', 'layer_types');
+  #ctools_include('plugins');
+  #$layer_types = ctools_get_plugins('geoserver', 'layer_types');
 
   foreach ($layer_types as $name => $type_def) {
     $type = geoserver_layer_type_load($name);
@@ -86,9 +86,20 @@ function geoserver_ui_layers_settings_submit(&$form, &$form_state) {
   foreach ($form_state['values'] as $key => $value) {
     if (in_array($key, array_keys($layer_types))) {
       foreach ($value['settings'] as $k => $v) {
+        // TODO This variable was probably removed in Backdrop without replacement.
         variable_set($k, $v);
       }
     }
   }
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function geoserver_ui_autoload_info() {
+  return array(
+    'geoserver_layers_ui' => 'plugins/export_ui/geoserver_layers_ui.class.php',
+    'geoserver_styles_ui' => 'plugins/export_ui/geoserver_styles_ui.class.php',
+  );
 }
 

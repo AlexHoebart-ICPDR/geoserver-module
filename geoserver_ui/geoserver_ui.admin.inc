@@ -14,8 +14,8 @@
  */
 function geoserver_ui_admin_settings_form() {
 
-  $url        = variable_get('geoserver_url', '');
-  $workspace  = variable_get('geoserver_workspace', '');
+  $url        = config_get('geoserver.settings', 'geoserver_url');
+  $workspace  = config_get('geoserver.settings', 'geoserver_workspace');
   $workspaces = array('');
   $workspace_type = 'select';
 
@@ -28,27 +28,28 @@ function geoserver_ui_admin_settings_form() {
           $workspaces[$ws->name] = $ws->name;
         }
       }
-    } catch (geoserver_resource_exception $exc) {
+    }
+    catch (geoserver_resource_exception $exc) {
       $workspace_type = 'textfield';
-      drupal_set_message(t('Failed to get list of workspaces from GeoServer. See the log for details.'), 'error');
+      backdrop_set_message(t('Failed to get list of workspaces from GeoServer. See the log for details.'), 'error');
       watchdog('geoserver', 'Failed to get list of workspaces from GeoServer: @exception',
         array('@exception' => $exc->getMessage()), WATCHDOG_ERROR);
     }
   }
 
   if (geoserver_check_jsonp() === FALSE) {
-    drupal_set_message(t('JSONP is disabled and some services might not work. See the GeoServer module documentation on <a href="@link">how to enable JSONP</a>.', array('@link' => 'https://www.drupal.org/node/1504464')), 'warning');
+    backdrop_set_message(t('JSONP is disabled and some services might not work. See the GeoServer module documentation on <a href="@link">how to enable JSONP</a>.', array('@link' => 'https://www.drupal.org/node/1504464')), 'warning');
   }
 
-  $styles = geoserver_styles();
-  $layers = geoserver_layers_load();
+  #$styles = geoserver_styles();
+  #$layers = geoserver_layers_load();
 
   $form = array(
     'geoserver_url' => array(
       '#type' => 'textfield',
       '#title' => t('GeoServer URL'),
       '#default_value' => $url,
-      '#description' => t('The URL where GeoServer is running. You need to re-login into Drupal to allow authentication to GeoServer before the new server can be used.'),
+      '#description' => t('The URL where GeoServer is running. You need to re-login into Backdrop to allow authentication to GeoServer before the new server can be used.'),
     ),
     'geoserver_workspace' => array(
       '#type' => $workspace_type,
@@ -72,7 +73,7 @@ function geoserver_ui_admin_settings_form() {
 function geoserver_ui_admin_settings_form_submit(&$form, &$form_state) {
   $form_state['values']['geoserver_url'] = rtrim($form_state['values']['geoserver_url'], '/') . '/';
   foreach ($form_state['values'] as $name => $value) {
-    variable_set($name, $value);
+    config_set('geoserver.settings', $name, $value);
   }
 }
 

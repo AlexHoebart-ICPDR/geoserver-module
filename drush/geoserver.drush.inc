@@ -6,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_drush_command().
+ * Implements hook_drush_command().
  *
  * In this hook, you specify which commands your
  * drush module makes available, what it does and
@@ -34,7 +34,7 @@ function geoserver_drush_command() {
 }
 
 /**
- * Implementation of hook_drush_help().
+ * Implements hook_drush_help().
  *
  * This function is called whenever a drush user calls
  * 'drush help <name-of-your-command>'
@@ -59,7 +59,7 @@ function drush_geoserver_configure() {
 
   $username = drush_prompt(dt('Username'), NULL, TRUE);
   $password = drush_prompt(dt('Password'), NULL, TRUE, TRUE);
-  $geoserver_workspace = variable_get('geoserver_workspace');
+  $geoserver_workspace = config_get('geoserver.settings', 'geoserver_workspace');
 
   // Try to login.
   $geoserver_login = geoserver_login($username, $password);
@@ -81,7 +81,8 @@ function drush_geoserver_configure() {
     $status = $layer->save();
     if ($status !== TRUE) {
       drush_log(dt('Could not save layer @name.', array('@name' => $layer->name)), 'error');
-    } else {
+    }
+    else {
       drush_log(dt('Saved layer @name.', array('@name' => $layer->name)), 'success');
     }
   }
@@ -92,7 +93,8 @@ function drush_geoserver_configure() {
     $status = geoserver_style_save($style);
     if ($status !== TRUE) {
       drush_log(dt('Could not save style @name.', array('@name' => $style->name)), 'error');
-    } else {
+    }
+    else {
       drush_log(dt('Saved style @name.', array('@name' => $style->name)), 'success');
     }
   }

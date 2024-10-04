@@ -5,10 +5,10 @@
  * Main file of this module. Loads include files and implements general hooks.
  */
 
-module_load_include('inc', 'geoserver', '/geoserver.openlayers');
-module_load_include('inc', 'geoserver', '/geoserver.layer');
-module_load_include('inc', 'geoserver', '/geoserver.style');
-module_load_include('inc', 'geoserver', '/geoserver.httpresponse');
+#module_load_include('inc', 'geoserver', '/geoserver.openlayers');
+#module_load_include('inc', 'geoserver', '/geoserver.layer');
+#module_load_include('inc', 'geoserver', '/geoserver.style');
+#module_load_include('inc', 'geoserver', '/geoserver.httpresponse');
 
 define('GEOSERVER_STATUS_FOUND_SAME', 1);
 define('GEOSERVER_STATUS_FOUND_DIFF', 2);
@@ -18,22 +18,35 @@ define('GEOSERVER_STATUS_NOT_FOUND', 3);
  * Implements hook_permission().
  */
 function geoserver_permission() {
-  $layers = geoserver_layers_load(TRUE);
+  #$layers = geoserver_layers_load(TRUE);
   $permissions = array(
     'administer geoserver' => array(
       'title' => t('Administer GeoServer'),
       'description' => t('Configure a GeoServer instance.'),
     ),
   );
-
+/*
   foreach ($layers as $layer) {
-    $permissions['read layer ' . $layer->name] = array('title' =>
-      t('%title: View any content', array('%title' => $layer->title)));
-    $permissions['write layer ' . $layer->name] = array('title' =>
-      t('%title: Edit any content', array('%title' => $layer->title)));
+    $permissions['read layer ' . $layer->name] = array(
+      'title' => t('%title: View any content', array('%title' => $layer->title)),
+    );
+    $permissions['write layer ' . $layer->name] = array(
+      'title' => t('%title: Edit any content', array('%title' => $layer->title)),
+    );
   }
-
+*/
   return $permissions;
+}
+
+/**
+ * Implements hook_config_info().
+ */
+function geoserver_config_info() {
+  $prefixes['geoserver.settings'] = array(
+    'label' => t('GeoServer settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
 }
 
 /**
@@ -43,12 +56,12 @@ function geoserver_permission() {
  * with every active user to keep sessions alive.
  */
 function geoserver_cron() {
-  if (time() >= variable_get('geoserver_next_execution', 0)) {
+  if (time() >= config_get('geoserver.settings', 'geoserver_next_execution')) {
     $users = db_query('SELECT uid FROM {sessions} WHERE uid <> 0')->fetchAll(PDO::FETCH_COLUMN);
     foreach ($users as $uid) {
       geoserver_get('web/', $uid);
     }
-    variable_set('geoserver_next_execution', time() + 3600);
+    config_set('geoserver.settings', 'geoserver_next_execution', time() + 3600);
   }
 }
 
@@ -99,7 +112,7 @@ function geoserver_user_login(&$edit, $account) {
     $geoserver_login = geoserver_login($edit['values']['name'], $edit['values']['pass']);
 
     if ($geoserver_login !== TRUE) {
-      drupal_set_message(t("Failed to authenticate you with GeoServer. Some map services won't be available."), 'error');
+      backdrop_set_message(t("Failed to authenticate you with GeoServer. Some map services won't be available."), 'error');
       watchdog('geoserver', 'Could not authenticate %username at GeoServer: !reason',
           array('%username' => urlencode($edit['values']['name']), '!reason' => $geoserver_login),
           WATCHDOG_ERROR);
@@ -117,10 +130,12 @@ function geoserver_check_jsonp() {
     $result = geoserver_get('ows?service=WFS&request=GetCapabilities');
     if (strpos($result->data, 'text/javascript')) {
       return TRUE;
-    } else {
+    }
+    else {
       return FALSE;
     }
-  } catch (geoserver_resource_exception $exc) {
+  }
+  catch (geoserver_resource_exception $exc) {
     // Do nothing if WFS capablities is not available,
     // because access might be blocked.
   }
@@ -132,11 +147,11 @@ function geoserver_check_jsonp() {
  * @param string $path path to append to the url
  * @return string
  */
-function geoserver_url($geoserver_path=NULL) {
+function geoserver_url($geoserver_path = NULL) {
 
-  static $url;
+  #AH don't cache: static $url;
   if (!isset($url)) {
-    $url = parse_url(variable_get('geoserver_url', ''));
+    $url = parse_url(config_get('geoserver.settings', 'geoserver_url'));
     $base_url = parse_url($GLOBALS['base_url']);
 
     // allow schemeless and absolute geoserver_url
@@ -150,31 +165,43 @@ function geoserver_url($geoserver_path=NULL) {
       $path = $GLOBALS['base_path'] . $path;
     }
 
-    $url = $scheme.'://'.$host.':'.$port.$path;
+    #AH: Access certain paths directly on localhost, TODO: does not work on admin/structure/geoserver
+    $direct_access_urls = array('web/', '/j_spring_security_logout', 'ows?service=wms&version=1.3.0&request=GetCapabilities');
+    if (in_array($geoserver_path, $direct_access_urls) || strpos($geoserver_path, 'rest/') !== FALSE) {
+      $scheme = 'http';
+      $host = 'localhost';
+      $port = '8080';
+    }
+
+    $url = $scheme . '://' . $host . ':' . $port . $path;
+    dsm($geoserver_path);
+    dsm($url);
   }
 
-  return isset($geoserver_path) ? rtrim($url, '/').'/'.ltrim($geoserver_path, '/') : $url;
+  return isset($geoserver_path)?rtrim($url, '/') . '/' . ltrim($geoserver_path, '/') : $url;
 }
 
 /**
- * GeoServer login. Tries to authenticate the Drupal user with its Drupal
- *     credentials on GeoServer on Drupal login.
+ * GeoServer login. Tries to authenticate the Backdrop user with its Backdrop
+ *     credentials on GeoServer on Backdrop login.
  *
  * @param string $username GeoServer username.
  * @param string $password GeoServer password.
  * @return boolean|string Error message on failure, otherwise TRUE.
  */
 function geoserver_login($username, $password) {
-  $urlConfigured = geoserver_url(); 
+  $config = config('geoserver.settings');
+  $urlConfigured = geoserver_url();
+
   if (empty($urlConfigured)) {
     return t('URL not configured.');
   }
 
-  $geoserver_workspace_support = (bool)variable_get('geoserver_workspace_support', FALSE);
+  $geoserver_workspace_support = (bool) $config->get('geoserver_workspace_support');
   if ($geoserver_workspace_support) {
     // prepend the workspace prefix to the username
-    $defaultPrefix = 'drupal';
-    $workspace_name = variable_get('geoserver_workspace', $defaultPrefix);
+    $defaultPrefix = 'backdrop';
+    $workspace_name = $config->get('geoserver_workspace');
     $username = $workspace_name . '_' . $username;
   }
 
@@ -188,7 +215,7 @@ function geoserver_login($username, $password) {
   if (file_put_contents($file, '') === FALSE) {
     return t("Could not write to geoserver cookiefile (!cookiefile)", array('!cookiefile' => $file));
   }
-    
+
   $fields = 'username=' . urlencode($username) . '&password=' . urlencode($password);
   $request = curl_init($geoserver_url . 'j_spring_security_check');
   curl_setopt($request, CURLOPT_POST, TRUE);
@@ -212,14 +239,14 @@ function geoserver_login($username, $password) {
 
       if (strpos($location_path, 'error=true') === FALSE) {
 
-        if (drupal_is_cli()) {
+        if (backdrop_is_cli()) {
           return TRUE;
         }
 
-        $expire = ini_get('session.cookie_lifetime') ? ini_get('session.cookie_lifetime') : -1;
-        if ($_SERVER['HTTP_HOST']!==$url['host']) {
-          // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
-          // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
+        $expire = ini_get('session.cookie_lifetime')?ini_get('session.cookie_lifetime') : -1;
+        if ($_SERVER['HTTP_HOST'] !== $url['host']) {
+          // GeoServer runs on foreign host. Thus Backdrop is not granted to set the required cookie and need to request help from GeoServer.
+          // GeoServer will only act when geoserver-sec-backdrop is module present (no yet determinable), otherwise the call fails.
           $geoserverSetCookie = url($urlConfigured . 'ows', array(
             'query' => array(
               'service' => 'cookie',
@@ -230,13 +257,15 @@ function geoserver_login($username, $password) {
               // Seconds after current time
               'max-age' => $expire,
               'path' => $url['path'],
-              'domain' => $url['host']
-            )
+              'domain' => $url['host'],
+            ),
           ));
-          // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
+          // Defer method call to backdrop_add_js via session as Backdrop silently ignores invocation otherwise
           $_SESSION['geoserverSetCookie'] = $geoserverSetCookie;
+dsm($geoserverSetCookie);
           return TRUE;
         }
+#ah fix: expire=0 not accepted by some browsers        elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire === -1) ? 0 : (time() + $expire), $url['path'])) {
         elseif (setcookie('JSESSIONID', $cookies['JSESSIONID'], ($expire===-1)?0:(time()+$expire), $url['path'])) {
           // Cookie written without requiring extensions to be present in GeoServer
           return TRUE;
@@ -260,20 +289,20 @@ function geoserver_login($username, $password) {
 }
 
 /**
- * Instructs GeoServer to set a session cookie. Thus Drupal can log the user in even though GeoServer might be running on a foreign domain.
+ * Instructs GeoServer to set a session cookie. Thus Backdrop can log the user in even though GeoServer might be running on a foreign domain.
  */
 function geoserver_page_alter(&$page) {
-    drupal_session_start();
-    if (array_key_exists('geoserverSetCookie', $_SESSION)) {
-        $geoserverSetCookie = $_SESSION['geoserverSetCookie'];
-        drupal_add_js($geoserverSetCookie, array(
-            'type' => 'external',
-            'defer' => FALSE,
-            // Ensure a separate script tag is emitted because headers of GeoServer need to be retained
-            'preprocess' => FALSE
-        ));
-        unset($_SESSION['geoserverSetCookie']);
-    }
+  backdrop_session_start();
+  if (array_key_exists('geoserverSetCookie', $_SESSION)) {
+    $geoserverSetCookie = $_SESSION['geoserverSetCookie'];
+    backdrop_add_js($geoserverSetCookie, array(
+      'type' => 'external',
+      'defer' => FALSE,
+      // Ensure a separate script tag is emitted because headers of GeoServer need to be retained
+      'preprocess' => FALSE,
+    ));
+    unset($_SESSION['geoserverSetCookie']);
+  }
 }
 
 
@@ -290,12 +319,12 @@ function geoserver_user_logout($account) {
       array('%user' => $account->name, '%message' => $exc->getMessage()), WATCHDOG_ERROR);
   }
 
-  if (!drupal_is_cli()) {
-    $urlConfigured = geoserver_url(); 
+  if (!backdrop_is_cli()) {
+    $urlConfigured = geoserver_url();
     $url = parse_url($urlConfigured);
-    if ($_SERVER['HTTP_HOST']!==$url['host']) {
-      // GeoServer runs on foreign host. Thus Drupal is not granted to set the required cookie and need to request help from GeoServer.
-      // GeoServer will only act when geoserver-sec-drupal is module present (no yet determinable), otherwise the call fails.
+    if ($_SERVER['HTTP_HOST'] !== $url['host']) {
+      // GeoServer runs on foreign host. Thus Backdrop is not granted to set the required cookie and need to request help from GeoServer.
+      // GeoServer will only act when geoserver-sec-backdrop is module present (no yet determinable), otherwise the call fails.
       $geoserverUnsetCookie = url($urlConfigured . 'ows', array(
         'query' => array(
           'service' => 'cookie',
@@ -306,10 +335,10 @@ function geoserver_user_logout($account) {
           // Seconds after current time
           'max-age' => 1,
           'path' => $url['path'],
-          'domain' => $url['host']
-        )
+          'domain' => $url['host'],
+        ),
       ));
-      // Defer method call to drupal_add_js via session as Drupal silently ignores invocation otherwise
+      // Defer method call to backdrop_add_js via session as Backdrop silently ignores invocation otherwise
       $_SESSION['geoserverSetCookie'] = $geoserverUnsetCookie;
     }
     else {
@@ -349,14 +378,15 @@ function geoserver_node_delete($node) {
  * Requires a cached WMS layer for the content type of the node.
  */
 function geoserver_truncate($node) {
+  $config = config('geoserver.settings');
 
-  $content_type_settings = variable_get('geoserver_content_type_settings', array());
+  $content_type_settings = $config->get('geoserver_content_type_settings');
 
   if (isset($content_type_settings[$node->type]) && $content_type_settings[$node->type]['gwc']) {
     // Node belongs to a content type with a GeoWebCache layer.
-    $workspace = variable_get('geoserver_workspace', '');
+    $workspace = $config->get('geoserver_workspace');
     $settings = $content_type_settings[$node->type];
-    $field_name = drupal_substr($settings['geometry_column'], 0, -9);
+    $field_name = backdrop_substr($settings['geometry_column'], 0, -9);
     $field = field_info_field($field_name);
 
     $geo_set = new PostgisGeometrySet($field['settings']['type'], $field['settings']['srid']);
@@ -372,7 +402,7 @@ function geoserver_truncate($node) {
 
     $layer = $workspace . ':' . trim($settings['layer']);
     $srid = explode(':', $settings['gwc_srs']);
-    $bbox = preg_split('/[\, ]/', drupal_substr($geo_set->getBox(0.1, $srid[1]), 4, -1));
+    $bbox = preg_split('/[\, ]/', backdrop_substr($geo_set->getBox(0.1, $srid[1]), 4, -1));
 
     if (count($bbox) == 4) {
 
@@ -381,13 +411,13 @@ function geoserver_truncate($node) {
                     <name>' . htmlspecialchars($layer) . '</name>
                     <bounds>
                       <coords>
-                        <double>' . htmlspecialchars((string)$bbox[0]) . '</double>
-                        <double>' . htmlspecialchars((string)$bbox[1]) . '</double>
-                        <double>' . htmlspecialchars((string)$bbox[2]) . '</double>
-                        <double>' . htmlspecialchars((string)$bbox[3]) . '</double>
+                        <double>' . htmlspecialchars((string) $bbox[0]) . '</double>
+                        <double>' . htmlspecialchars((string) $bbox[1]) . '</double>
+                        <double>' . htmlspecialchars((string) $bbox[2]) . '</double>
+                        <double>' . htmlspecialchars((string) $bbox[3]) . '</double>
                       </coords>
                     </bounds>
-                    <gridSetId>' . htmlspecialchars((string)$settings['gwc_srs']) . '</gridSetId>
+                    <gridSetId>' . htmlspecialchars((string) $settings['gwc_srs']) . '</gridSetId>
                     <zoomStart>0</zoomStart>
                     <zoomStop>20</zoomStop>
                     <format>image/png</format>
@@ -413,19 +443,19 @@ function geoserver_post($path, $content) {
 
   if (substr($parsed_url['path'], -3) == 'xml') {
     $headers = array(
-      'Content-Length: ' . strlen($content), // using strlen instead of drupal_strlen as the length in bytes is needed here.
+      'Content-Length: ' . strlen($content), // using strlen instead of backdrop_strlen as the length in bytes is needed here.
       'Content-type: text/xml',
     );
   }
   elseif (substr($parsed_url['path'], -4) == 'json') {
     $content = json_encode($content);
     $headers = array(
-      'Content-type: application/json'
+      'Content-type: application/json',
     );
   }
   elseif (substr($parsed_url['path'], -3) == 'sld') {
     $headers = array(
-      'Content-type: application/vnd.ogc.sld+xml'
+      'Content-type: application/vnd.ogc.sld+xml',
     );
   }
   else {
@@ -444,13 +474,13 @@ function geoserver_post($path, $content) {
   $result->url = $url;
   $result->content = $content;
   $result->data = curl_exec($request);
-  if ($result->data===FALSE) {
+  if ($result->data === FALSE) {
     $e = new geoserver_resource_curl_exception($request);
     curl_close($request);
     throw $e;
   }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-  if ($result->code<200 || $result->code>299) {
+  if ($result->code < 200 || $result->code > 299) {
     $e = new geoserver_resource_curl_exception($request, $result->data);
     curl_close($request);
     throw $e;
@@ -472,19 +502,19 @@ function geoserver_put($path, $content) {
 
   if (substr($url, -3) == 'xml') {
     $headers = array(
-      'Content-Length: ' . strlen($content), // using strlen instead of drupal_strlen as the length in bytes is needed here.
+      'Content-Length: ' . strlen($content), // using strlen instead of backdrop_strlen as the length in bytes is needed here.
       'Content-type: text/xml',
     );
   }
   elseif (substr($url, -4) == 'json') {
     $content = json_encode($content);
     $headers = array(
-      'Content-type: application/json'
+      'Content-type: application/json',
     );
   }
   elseif (substr($url, -3) == 'sld') {
     $headers = array(
-      'Content-type: application/vnd.ogc.sld+xml'
+      'Content-type: application/vnd.ogc.sld+xml',
     );
   }
   else {
@@ -500,7 +530,7 @@ function geoserver_put($path, $content) {
 
   curl_setopt($request, CURLOPT_PUT, TRUE);
   curl_setopt($request, CURLOPT_INFILE, $file);
-  curl_setopt($request, CURLOPT_INFILESIZE, drupal_strlen($content));
+  curl_setopt($request, CURLOPT_INFILESIZE, backdrop_strlen($content));
   curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
   curl_setopt($request, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($request, CURLOPT_COOKIEFILE, geoserver_get_cookiefile());
@@ -508,13 +538,13 @@ function geoserver_put($path, $content) {
   $result = new geoserver_httpresponse();
   $result->url  = $url;
   $result->data = curl_exec($request);
-  if ($result->data===FALSE) {
+  if ($result->data === FALSE) {
     $e = new geoserver_resource_curl_exception($request);
     curl_close($request);
     throw $e;
   }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-  if ($result->code<200 || $result->code>299) {
+  if ($result->code < 200 || $result->code > 299) {
     $e = new geoserver_resource_curl_exception($request, $result->data);
     curl_close($request);
     throw $e;
@@ -532,33 +562,34 @@ function geoserver_put($path, $content) {
 function geoserver_get($path, $uid = NULL) {
   $url = geoserver_url($path);
 
-  // Use Drupal's HTTP layer instead of curl because the way PHP integrates
+  // Use Backdrop's HTTP layer instead of curl because the way PHP integrates
   // curl breaks curl's CURLOPT_FOLLOWLOCATION option if PHP's open_basedir
   // restriction is enabled.
   $cookies = geoserver_parse_cookiefile(geoserver_get_cookiefile($uid));
   $requestCookies = array();
-  foreach($cookies as $name => $value){
-    if(mb_strpos($name, '=')===FALSE && mb_ereg_match('\s|,|;', $value)===FALSE){
-      $requestCookies[] = $name.'='.$value;
-    } else {
+  foreach ($cookies as $name => $value) {
+    if (mb_strpos($name, '=') === FALSE && mb_ereg_match('\s|,|;', $value) === FALSE) {
+      $requestCookies[] = $name . '=' . $value;
+    }
+    else {
       throw new geoserver_resource_exception('Invalid characters in cookie.', 503);
     }
   }
-  $response = drupal_http_request($url, array(
-      'headers' => array(
-          'Cookie' => implode('; ', $requestCookies)
-      )
+  $response = backdrop_http_request($url, array(
+    'headers' => array(
+      'Cookie' => implode('; ', $requestCookies),
+    ),
   ));
-  
-  // Drupal uses negatives codes to denote errors in parsing the URI.
-  if ($response->code<0) {
+
+  // Backdrop uses negatives codes to denote errors in parsing the URI.
+  if ($response->code < 0) {
     throw new geoserver_resource_exception(
       $response->error,
       $response->code
     );
   }
-  
-  if ($response->code<200 || $response->code>299) {
+
+  if ($response->code < 200 || $response->code > 299) {
     throw new geoserver_resource_http_exception(
       isset($response->redirect_url) ? $response->redirect_url : $url,
       $response->code,
@@ -596,13 +627,13 @@ function geoserver_delete($path) {
   $result = new geoserver_httpresponse();
   $result->url = $url;
   $result->data = curl_exec($request);
-  if ($result->data===FALSE) {
+  if ($result->data === FALSE) {
     $e = new geoserver_resource_curl_exception($request);
     curl_close($request);
     throw $e;
   }
   $result->code = curl_getinfo($request, CURLINFO_HTTP_CODE);
-  if ($result->code<200 || $result->code>299) {
+  if ($result->code < 200 || $result->code > 299) {
     $e = new geoserver_resource_curl_exception($request);
     curl_close($request);
     throw $e;
@@ -626,13 +657,16 @@ function geoserver_get_cookiefile($uid = NULL) {
     global $user;
     $uid = $user->uid;
   }
- 
+
+  #AH not needed for anonymous user
+  if ($uid == 0) return FALSE;
+
   $systemUserPart = "x";
   if (function_exists('posix_getuid')) {
     $systemUserPart = posix_getuid();
   }
 
-  $workspace = variable_get('geoserver_workspace', 'drupal');
+  $workspace = config_get('geoserver.settings', 'geoserver_workspace');
 
   return file_directory_temp() . '/geoserver_session_' . $systemUserPart . '_' . $workspace . '_' . $uid;
 }
@@ -648,8 +682,8 @@ function geoserver_modules_enabled($modules) {
 
       // Create styles.
       if (isset($feature->info['features']['geoserver_styles'])) {
-        $workspace = variable_get('geoserver_workspace', '');
-        $styles = module_invoke($module, 'geoserver_styles');
+        $workspace = config_get('geoserver.settings', 'geoserver_workspace');
+        #$styles = module_invoke($module, 'geoserver_styles');
         $styles = is_array($styles) ? $styles : array();
         foreach ($styles as $style) {
           try {
@@ -685,8 +719,8 @@ function geoserver_modules_disabled($modules) {
 
       // Delete styles.
       if (isset($feature->info['features']['geoserver_styles'])) {
-        $workspace = variable_get('geoserver_workspace', '');
-        $styles = module_invoke($module, 'geoserver_styles');
+        $workspace = config_get('geoserver.settings', 'geoserver_workspace');
+        #$styles = module_invoke($module, 'geoserver_styles');
         $styles = is_array($styles) ? $styles : array();
         foreach ($styles as $style) {
           try {
@@ -721,10 +755,10 @@ function geoserver_parse_cookiefile($file) {
   // Parse cookie file.
   $cookies = array();
   $lines = @file($file);
-  if($lines===FALSE) {
-    watchdog('geoserver', 
+  if ($lines === FALSE) {
+    watchdog('geoserver',
       t("Couldn't read cookies for GeoServer. Did your session expire?"),
-      NULL, 
+      NULL,
       WATCHDOG_ERROR
     );
     return array();
@@ -735,7 +769,7 @@ function geoserver_parse_cookiefile($file) {
     }
     $columns = explode("\t", $line);
     if (isset($columns[5]) && isset($columns[6])) {
-      $cookies[$columns[5]] = drupal_substr($columns[6], 0, -1);
+      $cookies[$columns[5]] = backdrop_substr($columns[6], 0, -1);
     }
   }
   return $cookies;
@@ -760,7 +794,7 @@ function geoserver_configure_workspace($geoserver_workspace) {
       geoserver_post('rest/workspaces.json', $content);
     }
     catch (geoserver_resource_exception $exc) {
-      return t('Could not create GeoServer workspace: !reason', 
+      return t('Could not create GeoServer workspace: !reason',
         array('!reason' => $exc->getMessage()));
     }
   }
@@ -783,25 +817,82 @@ function geoserver_configure_workspace($geoserver_workspace) {
         'workspace' => $geoserver_workspace,
         'connectionParameters' => array(
           'entry' => array(
-            array('@key' => 'Connection timeout',   '$' => '20'),
-            array('@key' => 'port',                 '$' => $database['port']),
-            array('@key' => 'passwd',               '$' => $database['password']),
-            array('@key' => 'dbtype',               '$' => 'postgis'),
-            array('@key' => 'host',                 '$' => $database['host']),
-            array('@key' => 'validate connections', '$' => 'false'),
-            array('@key' => 'max connections',      '$' => '10'),
-            array('@key' => 'database',             '$' => $database['database']),
-            array('@key' => 'namespace',            '$' => $geoserver_workspace),
-            array('@key' => 'schema',               '$' => 'public'),
-            array('@key' => 'Loose bbox',           '$' => 'true'),
-            array('@key' => 'Expose primary keys',  '$' => 'false'),
-            array('@key' => 'fetch size',           '$' => '1000'),
-            array('@key' => 'Max open prepared statements', '$' => '50'),
-            array('@key' => 'preparedStatements',   '$' => 'false'),
-            array('@key' => 'Estimated extends',    '$' => 'true'),
-            array('@key' => 'user',                 '$' => $database['username']),
-            array('@key' => 'min connections',      '$' => '1'),
-            array('@key' => 'Primary key metadata table', '$' => 'public.geoserver_pk_metadata_table'),
+            array(
+              '@key' => 'Connection timeout',
+              '$' => '20',
+            ),
+            array(
+              '@key' => 'port',
+              '$' => $database['port'],
+            ),
+            array(
+              '@key' => 'passwd',
+              '$' => $database['password'],
+            ),
+            array(
+              '@key' => 'dbtype',
+              '$' => 'postgis',
+            ),
+            array(
+              '@key' => 'host',
+              '$' => $database['host'],
+            ),
+            array(
+              '@key' => 'validate connections',
+              '$' => 'false',
+            ),
+            array(
+              '@key' => 'max connections',
+              '$' => '10',
+            ),
+            array(
+              '@key' => 'database',
+              '$' => $database['database'],
+            ),
+            array(
+              '@key' => 'namespace',
+              '$' => $geoserver_workspace,
+            ),
+            array(
+              '@key' => 'schema',
+              '$' => 'public',
+            ),
+            array(
+              '@key' => 'Loose bbox',
+              '$' => 'true',
+            ),
+            array(
+              '@key' => 'Expose primary keys',
+              '$' => 'false',
+            ),
+            array(
+              '@key' => 'fetch size',
+              '$' => '1000',
+            ),
+            array(
+              '@key' => 'Max open prepared statements',
+              '$' => '50',
+            ),
+            array(
+              '@key' => 'preparedStatements',
+              '$' => 'false',
+            ),
+            array(
+              '@key' => 'Estimated extends',
+              '$' => 'true',
+            ),
+            array(
+              '@key' => 'user',
+              '$' => $database['username'],
+            ),
+            array(
+              '@key' => 'min connections',
+              '$' => '1',
+            ),
+            array(
+              '@key' => 'Primary key metadata table',
+              '$' => 'public.geoserver_pk_metadata_table',
+            ),
           ),
         ),
       ),
@@ -816,6 +907,25 @@ function geoserver_configure_workspace($geoserver_workspace) {
   }
 
   return TRUE;
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function geoserver_autoload_info() {
+  return array(
+    'geoserver_httpresponse' => 'geoserver.httpresponse.inc',
+    'geoserver_resource_exception' => 'geoserver.layer.inc',
+    'geoserver_resource_http_exception' => 'geoserver.layer.inc',
+    'geoserver_resource_curl_exception' => 'geoserver.layer.inc',
+    'geoserver_resource' => 'geoserver.layer.inc',
+    'geoserver_layer_type' => 'geoserver.layer.inc',
+    'geoserver_resource_feature_type' => 'geoserver.layer.inc',
+    'geoserver_layer_type_feature_type' => 'geoserver.layer.inc',
+    'geoserver_layer_type_coverage' => 'geoserver.layer.inc',
+    'openlayers_behavior_geoserver_ecql' => 'plugins/openlayers/behaviors/openlayers_behavior_geoserver_ecql.inc',
+    'openlayers_layer_type_geoserver_wfs' => 'plugins/openlayers/layer_types/openlayers_layer_type_geoserver_wfs.inc',
+  );
 }
 
 

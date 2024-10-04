@@ -1,5 +1,6 @@
 name = GeoServer
 description = GeoServer integration.
 package = Geodata
-core = 7.x
-dependencies[] = ctools
+backdrop = 1.x
+type = module
+

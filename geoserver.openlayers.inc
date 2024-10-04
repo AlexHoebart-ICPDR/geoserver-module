@@ -14,7 +14,7 @@ function geoserver_openlayers_layers() {
   $gs_layers = geoserver_layers_load();
   $gs_styles = geoserver_styles();
   $url = geoserver_url();
-  $workspace = variable_get('geoserver_workspace', '');
+  $workspace = config_get('geoserver.settings', 'geoserver_workspace');
 
   foreach (array_values($gs_layers) as $gs_layer) {
 
@@ -65,7 +65,7 @@ function geoserver_openlayers_layers() {
       $ol_layer->description = t('WFS layer of GeoServer layer !name',
           array('!name' => $gs_layer->name));
       $ol_layer->data = array(
-        'attribution' =>  isset($gs_layer->data['attribution']) ? $gs_layer->data['attribution'] : NULL,
+        'attribution' => isset($gs_layer->data['attribution']) ? $gs_layer->data['attribution'] : NULL,
         'layer_type' => 'openlayers_layer_type_geoserver_wfs',
         'sld' => $sld,
         'url' => $url . $workspace . '/ows',

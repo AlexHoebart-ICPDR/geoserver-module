@@ -14,21 +14,17 @@ $plugin = array(
     'menu title' => 'Layers',
     'menu description' => 'Administer GeoServer Layers.',
   ),
-
   'handler' => array(
     'class' => 'geoserver_layers_ui',
   ),
-
   'export' => array(
     'admin_title' => 'name',
     'admin_description' => 'description',
   ),
-
   'title singular' => t('layer'),
   'title plural' => t('layers'),
   'title singular proper' => t('GeoServer Layer'),
   'title plural proper' => t('GeoServer Layers'),
-
   'strings' => array(
     'confirmation' => array(
       'add' => array(
@@ -42,10 +38,9 @@ $plugin = array(
       'delete' => array(
         'success' => t('Layer was deleted.'),
         'fail' => t('Failed to completely delete layer. See the log for details.'),
-      )
-    )
+      ),
+    ),
   ),
-
   'form' => array(
     'settings' => 'geoserver_layers_ctools_export_ui_form_settings',
   ),
@@ -55,7 +50,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
 
   $layer_object = geoserver_get_layer_object($form_state['item']);
 
-  if ($form_state['op'] == 'add'||'edit') {
+  if ($form_state['op'] == 'add' || 'edit') {
     $form = array();
 
     $styles = array('');
@@ -104,7 +99,8 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
       $layer_type_name = $layer_type['name'];
       if (isset($layer_object->data) && $layer_object->data['type'] == $layer_type_name) {
         $layer = $layer_object;
-      } else {
+      }
+      else {
         $layer = geoserver_layer_type_load($layer_type_name);
       }
 
@@ -150,9 +146,9 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
         $openlayers = isset($layer->data['openlayers']) ? $layer->data['openlayers'] : array();
         $openlayers_layer = new openlayers_layer_type();
 
-        $wfs_data = isset($openlayers['wfs_data']) ? array('data' => $openlayers['wfs_data']) : array();
-        $gwc_data = isset($openlayers['gwc_data']) ? array('data' => $openlayers['gwc_data']) : array();
-        $wms_data = isset($openlayers['wms_data']) ? array('data' => $openlayers['wms_data']) : array();
+        $wfs_data = isset($openlayers['wfs_data'])?array('data' => $openlayers['wfs_data']) : array();
+        $gwc_data = isset($openlayers['gwc_data'])?array('data' => $openlayers['gwc_data']) : array();
+        $wms_data = isset($openlayers['wms_data'])?array('data' => $openlayers['wms_data']) : array();
 
         $layers_option['openlayers'] = array(
           '#type' => 'fieldset',
@@ -186,7 +182,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
               '#default_value' => isset($wfs_data['data']['strategy']) ? $wfs_data['data']['strategy'] : 'bbox',
               '#description' => t('Define the data loading strategy. "Fixed" will load all data initially, "Bounding Box" only loads data for the current map extent.'),
             ),
-          ) + $openlayers_layer->options_form((object)$wfs_data),
+          ) + $openlayers_layer->options_form((object) $wfs_data),
           'gwc' => array(
             '#type' => 'checkbox',
             '#title' => t('Provide a cached OpenLayers WMS layer.'),
@@ -205,7 +201,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
                 ),
               ),
             ),
-          ) + $openlayers_layer->options_form((object)$gwc_data),
+          ) + $openlayers_layer->options_form((object) $gwc_data),
           'wms' => array(
             '#type' => 'checkbox',
             '#title' => t('Provide an untiled OpenLayers WMS layer.'),
@@ -224,7 +220,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
                 ),
               ),
             ),
-          ) + $openlayers_layer->options_form((object)$wms_data),
+          ) + $openlayers_layer->options_form((object) $wms_data),
         );
       }
 
@@ -257,7 +253,7 @@ function geoserver_layers_ctools_export_ui_form_settings(&$form, &$form_state) {
     );
 
     $form['layer'] += $layers_options;
-    
+
   }
 }
 

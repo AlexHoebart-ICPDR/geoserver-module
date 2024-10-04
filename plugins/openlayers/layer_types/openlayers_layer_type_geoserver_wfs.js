@@ -7,7 +7,7 @@
 /**
  * Openlayer layer handler for GeoServer WFS layer
  */
-Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, map, options) {
+Backdrop.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, map, options) {
 
   var sld, layer, strategy, renderIntent, 
       intents = ['default', 'select', 'temporary', 'delete'];
@@ -19,7 +19,7 @@ Drupal.openlayers.layer.openlayers_layer_type_geoserver_wfs = function(title, ma
   }
 
   layer = new OpenLayers.Layer.Vector(title, {
-    drupalID: options.drupalID,
+    backdropID: options.backdropID,
     attribution: options.attribution,
     strategies: [strategy],
     projection: map.projection,
